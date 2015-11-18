@@ -1,0 +1,19 @@
+Super Crazy Checkers Deluxe 9000
+	by Thomas Chaverondier
+
+	
+v0.7 (11/11/15) :
+- Pieces taken by each player are now drawn at the right of the screen
+(- Adjusted a couple of graphical parameters)
+	
+v0.6 (1/10/15) :
+- Fixed an issue preventing a player from huffing a piece if it had just been moved
+
+v0.5 (30/9/15) :
+- First beta release including :
+	* Game engine containing all rules for international (polish) checkers, including huffs
+	* Interface with a board and a control panel
+	* Fully interactive board
+	* Label indicating the player whose turn it is
+	* Auto-rotate mode (toggle on/off with a checkbox)
+	* Restart button
