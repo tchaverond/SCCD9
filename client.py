@@ -288,5 +288,25 @@ def main_client():
 	Checkers = Layout()
 	Checkers.loop()
 
+def split_rec(message):
+
+	mess=message.split(";")
+	if mess[0] == "$" and mess[-1] == "$":
+		mess.pop(0)
+		mess.pop(-1)
+		return mess
+
+	else: 
+		print 'ERROR'
 
 
+
+
+######################################################################
+######################################################################
+
+
+sC=socket(AF_INET,SOCK_STREAM)
+sC.connect(("127.0.0.1",4242))
+
+data=sC.recv(1024)

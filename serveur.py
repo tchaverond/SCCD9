@@ -628,6 +628,10 @@ def main_serveur(ip1, ip2):
 	partie = Board(ip1,ip2)
 
 	#send à chaque joueur joueur1/joueur2
+	ip1[0].sendall("$;player1;$")
+	ip2[0].sendall("$;player2;$")
+
+	
 	#send methode: dessiner la grille; arguments: grille
 
 	while not partie.end:
@@ -637,9 +641,11 @@ def main_serveur(ip1, ip2):
 
 
 def wait(number, ip):
+
+	ip[0].sendall("En attente d'un second joueur \n")
 	while stop[number]:
 		pass
-		#send ON ATTEND 
+
 
 
 ######################################################################
@@ -649,7 +655,7 @@ def wait(number, ip):
 
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
-s.bind(("",8000))
+s.bind(("",4242))
 
 s.listen(5)
 threads_wait = {}
