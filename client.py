@@ -3,8 +3,9 @@
 from Tkinter import*
 import time
 import os
+from socket import *
 
-import serveur #SCCD9
+#import serveur #SCCD9
 
 
 

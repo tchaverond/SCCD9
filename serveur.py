@@ -3,6 +3,8 @@
 from Tkinter import*
 import time
 import os
+from socket import *
+import threading
 
 
 class Board :
@@ -620,7 +622,7 @@ class Board :
 
 
 
-def main_serveur():
+def main_serveur(ip1, ip2):
 	
 	#Creation de la partie
 	partie = Board(ip1,ip2)
@@ -634,4 +636,61 @@ def main_serveur():
 		self.player = 3-self.player
 
 
+def wait(number, ip):
+	while stop[number]:
+		pass
+		#send ON ATTEND 
 
+
+######################################################################
+######################################################################
+
+
+
+s=socket(AF_INET,SOCK_STREAM)
+s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
+s.bind(("",8000))
+
+s.listen(5)
+threads_wait = {}
+threads_play = []
+ip={}
+global stop={}
+global number=0
+
+try:
+	while True:
+		stop[number]=False
+		number+=1
+		(Newsock, (Newip, Newport))=s.accept()
+		ip[number]=[Newsock, Newip]
+		my_thread=threading.Thread(target=wait, args=number, ip[number]) #(Newsock,Newip,Newport)
+		my_thread.start()
+		threads_wait[number]=my_thread
+		
+
+
+		if len(threads_wait) >= 2 :
+			temp=min(stop.keys())
+			ip1=ip.pop(temp)
+			del stop[temp]
+			threads_wait[temp].join()
+			del threads_wait[temp]
+
+			temp=min(stop.keys())
+			ip2=ip.pop(temp)
+			del stop[temp]
+			threads_wait[temp].join()
+			del threads_wait[temp]
+
+			my_thread_play=threading.Thread(target=main_serveur, args=ip1,ip2)
+			threads_play.append(my_thread_play)
+
+
+
+
+finally:
+	for t in threads_play:
+		t.join()
+
+	s.close() 
