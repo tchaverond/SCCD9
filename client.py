@@ -3,7 +3,7 @@
 from Tkinter import*
 import time
 import os
-from socket import *
+from socket import*
 
 #import serveur #SCCD9
 
@@ -63,18 +63,19 @@ class Layout:
 		controls.add(self.cemetery)
 
 
-		# auto-rotation checkbox
-		self.autorot = IntVar()
-		self.autorot.set(0)
-		check_autorot = Checkbutton(controls,text="Auto-rotate",variable=self.autorot,height=15)
+		# -__-__-__-__-__-__-__-__-__-__-__-__-__- deprecated -__-__-__-__-__-__-__-__-__-__-__-__-__- #
+		# # auto-rotation checkbox
+		# self.autorot = IntVar()
+		# self.autorot.set(0)
+		# check_autorot = Checkbutton(controls,text="Auto-rotate",variable=self.autorot,height=15)
 
-		controls.add(check_autorot)
+		# controls.add(check_autorot)
 
+		# # reset button (hopefully will after be included in a menu)
+		# reset_button = Button(controls,text="Restart",command=self.reset)
 
-		# reset button (hopefully will after be included in a menu)
-		reset_button = Button(controls,text="Restart",command=self.reset)
-
-		controls.add(reset_button)
+		# controls.add(reset_button)
+		# -__-__-__-__-__-__-__-__-__-__-__-__-__- deprecated -__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
 
 		world.add(self.playzone)
@@ -86,8 +87,10 @@ class Layout:
 		self.playzone.bind("<Button-1>", self.left_click)
 
 
-		# drawing the board for the first time
-		self.draw_grid_2(self.game.grid)
+		# -__-__-__-__- deprecated -__-__-__-__- #
+		# # drawing the board for the first time
+		# self.draw_grid_2(self.game.grid)
+		# -__-__-__-__- deprecated -__-__-__-__- #
 
 
 
@@ -166,7 +169,7 @@ class Layout:
 
 		self.click = True
 
-		# getting where the click has happened
+		# getting where the click has happened  -> TO CORRECT !!
 		if self.autorot.get() == 1 :
 			if self.game.player == 2 :
 				x = event.x / (self.plz_h/self.length)
@@ -264,11 +267,12 @@ class Layout:
 
 
 
+	# -__-__-__-__-__- deprecated -__-__-__-__-__- #
+	# def reset (self) :
 
-	def reset (self) :
-
-		self.fenetre.destroy()
-		os.system("python SCCD9_interface.py")
+	# 	self.fenetre.destroy()
+	# 	os.system("python SCCD9_interface.py")
+	# -__-__-__-__-__- deprecated -__-__-__-__-__- #
 
 
 
@@ -306,7 +310,16 @@ def split_rec(message):
 ######################################################################
 
 
-sC=socket(AF_INET,SOCK_STREAM)
+sC = socket(AF_INET,SOCK_STREAM)
 sC.connect(("127.0.0.1",4242))
 
-data=sC.recv(1024)
+
+opponent_found = False
+
+while opponent_found == False :
+	data = sC.recv(1024)
+	print data
+	if "player" in data :
+		opponent_found = True
+
+main_client()

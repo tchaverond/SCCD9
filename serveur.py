@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*
 
-from Tkinter import*
+#from Tkinter import*
 import time
 import os
-from socket import *
-import threading
+from socket import*
+from threading import*
 
 
 class Board :
 
-	def __init__ (self, ip1, ip2) :
+	def __init__ (self, socket_1, socket_2) :
 
 		self.height = 10
 		self.width = 10
@@ -19,7 +19,7 @@ class Board :
 
 
 		# variables holding the state of the game
-		self.ips = {"P1":ip1,"P2":ip2}
+		self.sockets = {"P1":socket_1,"P2":socket_2}
 		self.player = 2 				# whose turn it is to play
 		self.highlight = []				# currently selected piece (coordinates on the board)
 		self.moves = [] 				# possible moves for currently selected piece
@@ -85,6 +85,7 @@ class Board :
 		if not self.player_end_turn :
 			#send highlight_piece_1, highlight 	JOUEUR COURANT (self.player)
 			#send loop 							JOUEUR COURANT (self.player)
+			pass
 		else :
 			return 0
 		# if player == 1 :
@@ -608,7 +609,7 @@ class Board :
 
 
 
-	def partie_en_cours(self):
+	def partie_en_cours(self) :
 
 		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C
 		#send méthode: wait, JOUEUR QUI ATTEND
@@ -622,14 +623,16 @@ class Board :
 
 
 
-def main_serveur(ip1, ip2):
+def main_serveur(socket_1, ip1, socket_2, ip2) :
 	
 	#Creation de la partie
-	partie = Board(ip1,ip2)
+	partie = Board(socket_1,socket_2)
 
 	#send à chaque joueur joueur1/joueur2
-	ip1[0].sendall("$;player1;$")
-	ip2[0].sendall("$;player2;$")
+	socket_1.sendall("$;player1;$")
+	socket_2.sendall("$;player2;$")
+
+	print "Let's go !"
 
 	
 	#send methode: dessiner la grille; arguments: grille
@@ -640,11 +643,12 @@ def main_serveur(ip1, ip2):
 		self.player = 3-self.player
 
 
-def wait(number, ip):
+# def wait(number, ip) :
 
-	ip[0].sendall("En attente d'un second joueur \n")
-	while stop[number]:
-		pass
+# 	print "Waiting for 2 players"
+# 	ip[0].sendall("En attente d'un second joueur \n")
+# 	while stop[number]:
+# 		pass
 
 
 
@@ -656,47 +660,86 @@ def wait(number, ip):
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("",4242))
-
-s.listen(5)
-threads_wait = {}
-threads_play = []
-ip={}
-global stop={}
-global number=0
-
-try:
-	while True:
-		stop[number]=False
-		number+=1
-		(Newsock, (Newip, Newport))=s.accept()
-		ip[number]=[Newsock, Newip]
-		my_thread=threading.Thread(target=wait, args=number, ip[number]) #(Newsock,Newip,Newport)
-		my_thread.start()
-		threads_wait[number]=my_thread
-		
-
-
-		if len(threads_wait) >= 2 :
-			temp=min(stop.keys())
-			ip1=ip.pop(temp)
-			del stop[temp]
-			threads_wait[temp].join()
-			del threads_wait[temp]
-
-			temp=min(stop.keys())
-			ip2=ip.pop(temp)
-			del stop[temp]
-			threads_wait[temp].join()
-			del threads_wait[temp]
-
-			my_thread_play=threading.Thread(target=main_serveur, args=ip1,ip2)
-			threads_play.append(my_thread_play)
+#serversocket.bind((socket.gethostname(), 80))
 
 
 
+shutdown = False
 
-finally:
-	for t in threads_play:
+threads = []
+
+try :
+
+	while shutdown == False :
+
+		s.listen(5)
+		print "Waiting for someone."
+		(socket_1, (ip1,port)) = s.accept()
+		socket_1.sendall("Waiting for an opponent.")
+		print "Waiting for someone else."
+		(socket_2, (ip2,port2)) = s.accept()
+		socket_2.sendall("Waiting for an opponent.")
+		newthread = Thread(target=main_serveur,args=(socket_1,ip1,socket_2,ip2))
+		threads.append(newthread)
+		newthread.start()
+
+
+finally :
+	
+	for t in threads :
 		t.join()
 
-	s.close() 
+	s.close()
+
+# s.listen(5)
+# threads_wait = {}
+# threads_play = []
+# ip = {}
+# global stop
+# stop = {}
+# global number
+# number = 0
+
+# try:
+	
+# 	while True:
+
+# 		stop[number] = False
+# 		(Newsock, (Newip, Newport)) = s.accept()
+# 		ip[number] = [Newsock, Newip]
+# 		my_thread = threading.Thread(target=wait, args=(number,ip[number]))
+# 		my_thread.start()
+# 		threads_wait[number] = my_thread
+# 		number += 1
+
+
+# 		if len(threads_wait) >= 2 :			
+
+# 			temp = min(stop.keys())
+# 			print temp,ip
+# 			ip[temp][0].sendall("Opponent_found \n")
+# 			ip1 = ip.pop(temp)
+# 			del stop[temp]
+# 			threads_wait[temp].join()
+# 			del threads_wait[temp]
+
+# 			temp = min(stop.keys())
+# 			ip[temp][0].sendall("Opponent_found \n")
+# 			ip2 = ip.pop(temp)
+# 			del stop[temp]
+# 			threads_wait[temp].join()
+# 			del threads_wait[temp]
+
+# 			my_thread_play=threading.Thread(target=main_serveur, args=(ip1,ip2))
+# 			print "blablabla"
+# 			threads_play.append(my_thread_play)
+
+
+
+
+# finally:
+
+# 	for t in threads_play:
+# 		t.join()
+
+# 	s.close() 
