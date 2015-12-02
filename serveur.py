@@ -3,8 +3,10 @@
 #from Tkinter import*
 import time
 import os
+import re
 from socket import*
 from threading import*
+
 
 
 class Board :
@@ -622,6 +624,30 @@ class Board :
 		self.check_end()
 
 
+def send_sthg(sock, msg):
+
+	sock.sendall(msg)
+	ok=False
+	while not ok:
+		data=sock.recv(1024)
+		if 'ok' in data:
+			ok=True
+
+
+def recv_sthg(sock):
+
+	msg = sock.recv(4096)
+
+	mess=msg.split(";")
+	if mess[0] == "$" and mess[-1] == "$":
+		mess.pop(0)
+		mess.pop(-1)
+		sock.sendall('$ok$')
+		return mess
+
+	else: 
+		print 'ERROR'
+
 
 def main_serveur(socket_1, ip1, socket_2, ip2) :
 	
@@ -629,13 +655,15 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 	partie = Board(socket_1,socket_2)
 
 	#send à chaque joueur joueur1/joueur2
-	socket_1.sendall("$;player1;$")
-	socket_2.sendall("$;player2;$")
+	send_sthg(socket_1, "player1")
+	send_sthg(socket_2, "player2")
+
+
+
+	send_sthg(socket_1, "$;"+"draw_grid_1;"+str(partie.grid)+";$")
+	send_sthg(socket_2, "$;"+"draw_grid_2;"+str(partie.grid)+";$")
 
 	print "Let's go !"
-
-	
-	#send methode: dessiner la grille; arguments: grille
 
 	while not partie.end:
 
@@ -662,7 +690,7 @@ s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("",4242))
 #serversocket.bind((socket.gethostname(), 80))
 
-
+#PRENDRE EN COMPTE LE CAS OU LE JOUEUR IMPAIR SE DECONNECTE AVANT L'ARRIVEE DU JOUEUR PAIR
 
 shutdown = False
 

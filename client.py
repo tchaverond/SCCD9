@@ -3,15 +3,18 @@
 from Tkinter import*
 import time
 import os
+import re
+import inspect
 from socket import*
+
+global methodes
 
 #import serveur #SCCD9
 
 
-
 class Layout:
 
-	def __init__(self):
+	def __init__(self,player_ID, serv_socket):
 
 		self.fenetre = Tk()
 		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (v0.7)")
@@ -19,6 +22,10 @@ class Layout:
 
 
 		self.click = False
+
+		self.player_ID=player_ID
+
+		self.serv_socket=serv_socket
 
 		# game engine : rules, pace...
 		#self.game = SCCD9.Board()
@@ -277,7 +284,10 @@ class Layout:
 
 
 	# (Tkinter's mainloop)
-	def loop (self) :
+	def click_loop (self) :
+
+
+
 		#afficher à ton tour de jouer
 		#self.fenetre.mainloop()
 		self.click = False
@@ -286,22 +296,60 @@ class Layout:
 			self.fenetre.update()
 
 
+	def run (self) :
+		while True :
+			message=recv_sthg(self.serv_socket)
+			#print 'run', message
+
+			if message[0] in methodes:
+
+				if 
 
 
-def main_client():
-	Checkers = Layout()
-	Checkers.loop()
 
-def split_rec(message):
+def send_sthg(sock, msg):
 
-	mess=message.split(";")
+	sock.sendall(msg)
+	ok=False
+	while not ok:
+		data=sock.recv(1024)
+		if 'ok' in data:
+			ok=True
+
+
+
+def recv_sthg(sock):
+
+	msg = sock.recv(4096)
+
+	mess=msg.split(";")
 	if mess[0] == "$" and mess[-1] == "$":
 		mess.pop(0)
 		mess.pop(-1)
+		sock.sendall('$ok$')
 		return mess
 
 	else: 
 		print 'ERROR'
+
+
+
+
+
+def main_client(player_ID, sC):
+
+	Checkers = Layout(player_ID, sC)
+	print Checkers.player_ID
+
+	inspection = inspect.getmembers(Checkers, predicate=inspect.ismethod)
+	global methodes
+	methodes=[]
+	for met in inspection:
+		methodes.append(met[0])
+
+	#print methodes
+	Checkers.run()
+
 
 
 
@@ -317,9 +365,12 @@ sC.connect(("127.0.0.1",4242))
 opponent_found = False
 
 while opponent_found == False :
-	data = sC.recv(1024)
+	data = sC.recv(4096)
 	print data
 	if "player" in data :
 		opponent_found = True
+		sC.sendall('ok')
 
-main_client()
+
+player_ID=data
+main_client(player_ID, sC)
