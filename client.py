@@ -7,8 +7,6 @@ import re
 import inspect
 from socket import*
 
-global methodes
-
 #import serveur #SCCD9
 
 
@@ -104,6 +102,8 @@ class Layout:
 	# drawing the grid with player 1 below
 	def draw_grid_1 (self, grid, queens = []) :
 
+		print "truc"
+		print grid
 		self.playzone.delete("all")
 		for i in xrange (len(grid)) :
 			for j in xrange (len(grid)) :
@@ -286,8 +286,6 @@ class Layout:
 	# (Tkinter's mainloop)
 	def click_loop (self) :
 
-
-
 		#afficher à ton tour de jouer
 		#self.fenetre.mainloop()
 		self.click = False
@@ -297,25 +295,114 @@ class Layout:
 
 
 	def run (self) :
+
 		while True :
+
 			message=recv_sthg(self.serv_socket)
-			#print 'run', message
+			self.handle(message)
+			self.fenetre.update_idletasks()
+			self.fenetre.update()
 
-			if message[0] in methodes:
 
-				if 
+	def handle (self, message) :
+
+		if "grid" in message :
+
+			grid = unstring_grid(message[1+message.index("grid")])
+
+		if "queens" in message :
+
+			queens = unstring_queens(message[1+message.index("queens")])
+
+		if "coords" in message :
+
+			coords = unstring_coords(message[1+message.index("coords")])
+
+		if message[0] == "method" :
+
+			eval(message[1+message.index("method")])
+
+		else :
+
+			pass
+			# TODO 
+
+			
+
+def unstring_grid (grid) :
+
+	rebuilt_grid = [[]]
+	temp = re.split("\[|\]|,",grid)
+	count = 0
+	cur_line = 0
+
+	for element in temp :
+
+		if element in ['-1',' -1','0',' 0','1',' 1','2',' 2'] :
+			rebuilt_grid[cur_line].append(int(element))
+			count += 1
+
+		if count == 10 and cur_line < 9 :
+			rebuilt_grid.append([])
+			cur_line += 1
+			count = 0
+
+	return rebuilt_grid
+
+
+
+def unstring_queens (queens) :
+
+	rebuilt_queens = [[]]
+	temp = re.split("\[|\]|,",queens)
+	count = 0
+	cur_line = 0
+
+	for element in temp :
+
+		if element not in ['', ' ','\t'] :
+			rebuilt_queens[cur_line].append(int(element))
+			count += 1
+
+		if count == 2 and cur_line < 0.25*(len(temp)-2)-1 :
+			rebuilt_queens.append([])
+			cur_line += 1
+			count = 0
+
+	return rebuilt_queens
+
+
+
+def unstring_coords (coords) :
+
+	rebuilt_coords = []
+	temp = re.split("\[|\]|,",coords)
+
+	for element in temp :
+
+		if element not in ['', ' ','\t'] :
+			rebuilt_coords.append(int(element))
+
+	return rebuilt_coords
 
 
 
 def send_sthg(sock, msg):
 
-	sock.sendall(msg)
+	final_msg = "$;"
+
+	for element in msg :
+
+		final_msg += str(element) + ";"
+
+	final_msg += "$"
+
+	sock.sendall(final_msg)
 	ok=False
 	while not ok:
 		data=sock.recv(1024)
 		if 'ok' in data:
 			ok=True
-
 
 
 def recv_sthg(sock):
@@ -341,11 +428,11 @@ def main_client(player_ID, sC):
 	Checkers = Layout(player_ID, sC)
 	print Checkers.player_ID
 
-	inspection = inspect.getmembers(Checkers, predicate=inspect.ismethod)
-	global methodes
-	methodes=[]
-	for met in inspection:
-		methodes.append(met[0])
+	# inspection = inspect.getmembers(Checkers, predicate=inspect.ismethod)
+	# global methodes
+	# methodes=[]
+	# for met in inspection:
+	# 	methodes.append(met[0])
 
 	#print methodes
 	Checkers.run()
