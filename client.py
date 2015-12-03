@@ -20,6 +20,7 @@ class Layout:
 
 
 		self.click = False
+		self.my_turn=False
 
 		self.player_ID=player_ID
 
@@ -97,6 +98,18 @@ class Layout:
 		# self.draw_grid_2(self.game.grid)
 		# -__-__-__-__- deprecated -__-__-__-__- #
 
+
+	def play(self):
+		print "Your turn!"
+		self.click = False
+		while not self.click:
+			self.fenetre.update_idletasks()
+			self.fenetre.update()
+
+
+	def wait(self):
+		print "Wait!"
+		recv_sthg(self.serv_socket) 
 
 
 	# drawing the grid with player 1 below
@@ -177,17 +190,16 @@ class Layout:
 		self.click = True
 
 		# getting where the click has happened  -> TO CORRECT !!
-		if self.autorot.get() == 1 :
-			if self.game.player == 2 :
-				x = event.x / (self.plz_h/self.length)
-				y = event.y / (self.plz_w/self.length)
 
-			else :
-				x = 9 - event.x/(self.plz_h/self.length)
-				y = 9 - event.y/(self.plz_w/self.length)
-		else :
+		if self.game.player == 2 :
 			x = event.x / (self.plz_h/self.length)
 			y = event.y / (self.plz_w/self.length)
+
+		else :
+			x = 9 - event.x/(self.plz_h/self.length)
+			y = 9 - event.y/(self.plz_w/self.length)
+
+		send_sthg(self.serv_socket,["coords", str([x,y])])
 
 
 		#send identifiant_joueur, x, y 
@@ -283,15 +295,15 @@ class Layout:
 
 
 
-	# (Tkinter's mainloop)
-	def click_loop (self) :
+	# # (Tkinter's mainloop)
+	# def click_loop (self) :
 
-		#afficher à ton tour de jouer
-		#self.fenetre.mainloop()
-		self.click = False
-		while not self.click:
-			self.fenetre.update_idletasks()
-			self.fenetre.update()
+	# 	#afficher à ton tour de jouer
+	# 	#self.fenetre.mainloop()
+	# 	self.click = False
+	# 	while not self.click:
+	# 		self.fenetre.update_idletasks()
+	# 		self.fenetre.update()
 
 
 	def run (self) :
