@@ -21,7 +21,7 @@ class Board :
 
 
 		# variables holding the state of the game
-		self.sockets = {"P1":socket_1,"P2":socket_2}
+		self.sockets = {1:socket_1,2:socket_2}
 		self.player = 2 				# whose turn it is to play
 		self.highlight = []				# currently selected piece (coordinates on the board)
 		self.moves = [] 				# possible moves for currently selected piece
@@ -71,7 +71,7 @@ class Board :
 
 
 
-	def left_click(x, y, player):
+	def left_click (self, x, y):
 		# there are 2 possibilities : whether the player wants to select a piece or to move it
 
 		if self.highlight == [] :					# if no piece is already selected (selecting a piece to move or huffing an opponent's one)
@@ -108,6 +108,7 @@ class Board :
 		# 		self.highlight_piece_2(self.game.highlight)
 
 
+		# TO CORRECT
 		if player == 1 :
 			self.player_now.set("Now playing : Red")
 		else :
@@ -613,20 +614,60 @@ class Board :
 
 	def partie_en_cours(self) :
 
+		send_sthg(self.sockets[self.player],["method","self.play()"])
+		send_sthg(self.sockets[3-self.player],["method","self.wait()"])
 		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C
 		#send méthode: wait, JOUEUR QUI ATTEND
 
+		coords = self.handle(recv_sthg(self.sockets[self.player]))
+
 		#recv identifiant; x; y
 
-		self.left_click(x, y, identifiant_joueur)
+		self.left_click(coords[0], coords[1])
 
 		#On vérifie si la partie est terminée
 		self.check_end()
 
 
+	def handle (self, message) :
+
+		if "coords" in message :
+
+			coords = unstring_coords(message[1+message.index("coords")])
+
+		else :
+
+			pass
+			# TODO (?)
+
+		return coords
+
+
+def unstring_coords (coords) :
+
+	rebuilt_coords = []
+	temp = re.split("\[|\]|,",coords)
+
+	for element in temp :
+
+		if element not in ['', ' ','\t'] :
+			rebuilt_coords.append(int(element))
+
+	print rebuilt_coords
+	return rebuilt_coords
+
+
 def send_sthg(sock, msg):
 
-	sock.sendall(msg)
+	final_msg = "$;"
+
+	for element in msg :
+
+		final_msg += str(element) + ";"
+
+	final_msg += "$"
+
+	sock.sendall(final_msg)
 	ok=False
 	while not ok:
 		data=sock.recv(1024)
@@ -655,13 +696,22 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 	partie = Board(socket_1,socket_2)
 
 	#send à chaque joueur joueur1/joueur2
-	send_sthg(socket_1, "player1")
-	send_sthg(socket_2, "player2")
+	socket_1.sendall("player1")
+	ok=False
+	while not ok:
+		data=socket_1.recv(1024)
+		if 'ok' in data:
+			ok=True
 
+	socket_2.sendall("player2")
+	ok=False
+	while not ok:
+		data=socket_2.recv(1024)
+		if 'ok' in data:
+			ok=True
 
-
-	send_sthg(socket_1, "$;"+"draw_grid_1;"+str(partie.grid)+";$")
-	send_sthg(socket_2, "$;"+"draw_grid_2;"+str(partie.grid)+";$")
+	send_sthg(socket_1,["method","self.draw_grid_1(grid)","grid",partie.grid])
+	send_sthg(socket_2,["method","self.draw_grid_2(grid)","grid",partie.grid])
 
 	print "Let's go !"
 

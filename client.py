@@ -189,9 +189,9 @@ class Layout:
 
 		self.click = True
 
-		# getting where the click has happened  -> TO CORRECT !!
+		# getting where the click has happened
 
-		if self.game.player == 2 :
+		if self.player_ID == 2 :
 			x = event.x / (self.plz_h/self.length)
 			y = event.y / (self.plz_w/self.length)
 
