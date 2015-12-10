@@ -92,7 +92,11 @@ class Board :
 		#send draw_cemetery, grid, queens	2 JOUEURS
 
 		if not self.player_end_turn and self.highlight != []:
-			send_sthg(self.sockets[self.player],["method","self.highlight_piece_1(coords)","coords",self.highlight])
+
+			if self.player == 1 :
+				send_sthg(self.sockets[self.player],["method","self.highlight_piece_1(coords)","coords",self.highlight])
+			else :
+				send_sthg(self.sockets[self.player],["method","self.highlight_piece_2(coords)","coords",self.highlight])
 			#send highlight_piece_1, highlight 	JOUEUR COURANT (self.player)
 			send_sthg(self.sockets[self.player],["method","self.play()"])
 			#send loop 							JOUEUR COURANT (self.player)

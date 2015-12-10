@@ -109,7 +109,11 @@ class Layout:
 
 	def wait(self):
 		print "Wait!"
-		recv_sthg(self.serv_socket) 
+		ok=False
+		while not ok:
+			data=self.serv_socket.recv(1024)
+			if 'ok' in data:
+				ok=True
 
 
 	# drawing the grid with player 1 below
@@ -198,7 +202,7 @@ class Layout:
 
 		# getting where the click has happened
 
-		if self.player_ID == 2 :
+		if self.player_ID == "player2" :
 			x = event.x / (self.plz_h/self.length)
 			y = event.y / (self.plz_w/self.length)
 
@@ -376,6 +380,10 @@ def unstring_queens (queens) :
 			rebuilt_queens.append([])
 			cur_line += 1
 			count = 0
+
+	if rebuilt_queens == [[]] :
+
+		rebuilt_queens = []
 
 	return rebuilt_queens
 
