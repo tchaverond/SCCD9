@@ -115,8 +115,6 @@ class Layout:
 	# drawing the grid with player 1 below
 	def draw_grid_1 (self, grid, queens = []) :
 
-		print "truc"
-		print grid
 		self.playzone.delete("all")
 		for i in xrange (len(grid)) :
 			for j in xrange (len(grid)) :
@@ -183,6 +181,15 @@ class Layout:
 
 
 
+	def highlight_piece_1 (self, coords) :
+
+		self.playzone.create_oval(self.plz_w-(self.cs*coords[0]+self.x_gap+self.size/6),self.plz_h-(self.cs*coords[1]+self.y_gap+self.size/6),self.plz_w-(self.cs*coords[0]+self.x_gap+5*self.size/6),self.plz_h-(self.cs*coords[1]+self.y_gap+5*self.size/6),outline='black')
+
+
+
+	def highlight_piece_2 (self, coords) :
+
+		self.playzone.create_oval(self.cs*coords[0]+self.x_gap+self.size/6,self.cs*coords[1]+self.y_gap+self.size/6,self.cs*coords[0]+self.x_gap+5*self.size/6,self.cs*coords[1]+self.y_gap+5*self.size/6,outline='black')
 
 	# method called by a left click on board
 	def left_click(self, event) :
@@ -199,7 +206,7 @@ class Layout:
 			x = 9 - event.x/(self.plz_h/self.length)
 			y = 9 - event.y/(self.plz_w/self.length)
 
-		send_sthg(self.serv_socket,["coords", str([x,y])])
+		send_sthg(self.serv_socket,["coords",[x,y]])
 
 
 		#send identifiant_joueur, x, y 
@@ -232,17 +239,6 @@ class Layout:
 		# 	self.player_now.set("Now playing : Green")
 
 		# self.check_end()
-
-
-	def highlight_piece_1 (self, coords) :
-
-		self.playzone.create_oval(self.plz_w-(self.cs*coords[0]+self.x_gap+self.size/6),self.plz_h-(self.cs*coords[1]+self.y_gap+self.size/6),self.plz_w-(self.cs*coords[0]+self.x_gap+5*self.size/6),self.plz_h-(self.cs*coords[1]+self.y_gap+5*self.size/6),outline='black')
-
-
-
-	def highlight_piece_2 (self, coords) :
-
-		self.playzone.create_oval(self.cs*coords[0]+self.x_gap+self.size/6,self.cs*coords[1]+self.y_gap+self.size/6,self.cs*coords[0]+self.x_gap+5*self.size/6,self.cs*coords[1]+self.y_gap+5*self.size/6,outline='black')
 
 
 

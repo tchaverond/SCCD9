@@ -81,15 +81,27 @@ class Board :
 			self.move(x,y)							# we call the "move" method
 
 		# updating the drawing of the grid
+		# everything done below :)
+
+		send_sthg(self.sockets[1],["method","self.draw_grid_1(grid,queens)","grid",self.grid,"queens",self.queens])
+		send_sthg(self.sockets[2],["method","self.draw_grid_2(grid,queens)","grid",self.grid,"queens",self.queens])
 		#send draw_grid_1, grid, queens 	JOUEUR 1
 		#send draw_grid_2, grid, queens		JOUEUR 2
+		send_sthg(self.sockets[1],["method","self.draw_cemetery(grid,queens)","grid",self.grid,"queens",self.queens])
+		send_sthg(self.sockets[2],["method","self.draw_cemetery(grid,queens)","grid",self.grid,"queens",self.queens])
 		#send draw_cemetery, grid, queens	2 JOUEURS
-		if not self.player_end_turn :
+
+		if not self.player_end_turn and self.highlight != []:
+			send_sthg(self.sockets[self.player],["method","self.highlight_piece_1(coords)","coords",self.highlight])
 			#send highlight_piece_1, highlight 	JOUEUR COURANT (self.player)
+			send_sthg(self.sockets[self.player],["method","self.play()"])
 			#send loop 							JOUEUR COURANT (self.player)
-			pass
-		else :
-			return 0
+
+		elif self.player_end_turn :
+			self.player = 3-self.player
+
+
+		##########
 		# if player == 1 :
 		# 	self.draw_grid_1(self.game.grid,self.game.queens) 
 
@@ -107,15 +119,8 @@ class Board :
 		# 	else :
 		# 		self.highlight_piece_2(self.game.highlight)
 
-
-		# TO CORRECT
-		if player == 1 :
-			self.player_now.set("Now playing : Red")
-		else :
-			self.player_now.set("Now playing : Green")
-
-		self.check_end()
-
+		#self.check_end()
+		##########
 
 
 
@@ -585,48 +590,42 @@ class Board :
 
 		i = 0
 		self.end = True
-		winner = 'player2'
 		while i < len(self.grid) and self.end == True :
 			if 1 in self.grid[i] :
 				self.end = False
-				winner = 'none'
 			i = i+1
 
-		if self.end == True :
-			return winner
+		if self.end == False :
 
-		i = 0
-		self.end = True
-		winner = 'player1'
-		while i < len(self.grid) and self.end == True :
-			if 2 in self.grid[i] :
-				self.end = False
-				winner = 'none'
-			i = i+1
-
-		if self.end == True :
-			return winner
-
-		else:
-			return ""
-
+			i = 0
+			self.end = True
+			while i < len(self.grid) and self.end == True :
+				if 2 in self.grid[i] :
+					self.end = False
+				i = i+1
 
 
 	def partie_en_cours(self) :
 
 		send_sthg(self.sockets[self.player],["method","self.play()"])
 		send_sthg(self.sockets[3-self.player],["method","self.wait()"])
-		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C
-		#send méthode: wait, JOUEUR QUI ATTEND
+		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
+		#send méthode: wait, JOUEUR QUI ATTEND   -> done
 
 		coords = self.handle(recv_sthg(self.sockets[self.player]))
-
-		#recv identifiant; x; y
+		#recv identifiant; x; y   -> done
 
 		self.left_click(coords[0], coords[1])
 
 		#On vérifie si la partie est terminée
 		self.check_end()
+
+		if self.end == True :
+
+			send_sthg(self.sockets[3-self.player],["method","self.win()"])
+			send_sthg(self.sockets[self.player],["method","self.lose()"])	
+
+
 
 
 	def handle (self, message) :
@@ -653,7 +652,6 @@ def unstring_coords (coords) :
 		if element not in ['', ' ','\t'] :
 			rebuilt_coords.append(int(element))
 
-	print rebuilt_coords
 	return rebuilt_coords
 
 
@@ -718,7 +716,6 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 	while not partie.end:
 
 		partie.partie_en_cours()
-		self.player = 3-self.player
 
 
 # def wait(number, ip) :
