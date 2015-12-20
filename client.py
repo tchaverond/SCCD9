@@ -216,8 +216,8 @@ class Layout:
 				y = int(event.y / (self.plz_w/self.length))
 
 			else :
-				x = int(9 - event.x/(self.plz_h/self.length))
-				y = int(9 - event.y/(self.plz_w/self.length))
+				x = int(10 - event.x/(self.plz_h/self.length))
+				y = int(10 - event.y/(self.plz_w/self.length))
 
 			send_sthg(self.serv_socket,["coords",[x,y]])
 

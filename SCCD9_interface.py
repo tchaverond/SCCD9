@@ -178,8 +178,8 @@ class Layout:
 				y = int(event.y / (self.plz_w/len(self.game.grid)))
 
 			else :
-				x = int(9 - event.x/(self.plz_h/len(self.game.grid)))
-				y = int(9 - event.y/(self.plz_w/len(self.game.grid)))
+				x = int(10 - event.x/(self.plz_h/len(self.game.grid)))
+				y = int(10 - event.y/(self.plz_w/len(self.game.grid)))
 		else :
 			x = int(event.x / (self.plz_h/len(self.game.grid)))
 			y = int(event.y / (self.plz_w/len(self.game.grid)))
