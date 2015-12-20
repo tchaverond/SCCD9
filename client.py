@@ -15,8 +15,11 @@ class Layout:
 	def __init__(self,player_ID, serv_socket):
 
 		self.fenetre = Tk()
-		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (v0.7)")
-		self.fenetre.geometry("900x600")
+		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (online)")
+		
+
+		self.h = self.fenetre.winfo_screenheight() * 0.85
+		self.w = min(self.fenetre.winfo_screenwidth() * 0.85, 1.5*self.h)
 
 
 		self.click = False
@@ -29,30 +32,30 @@ class Layout:
 		# game engine : rules, pace...
 		#self.game = SCCD9.Board()
 
-		self.plz_h = 600			# board height
-		self.plz_w = 600			# board width
+		self.plz_h = min(self.h,0.67*self.w)		# board height
+		self.plz_w = self.plz_h						# board width
 
-		self.length = 10
+		self.length = 10            # number of cases on the board (10 for international (polish) checkers)
 
 		# graphical parameters
-		self.cs = 59 				# square size (height and width)
-		self.x_gap = 6 				# x gap between 2 squares
-		self.y_gap = 6 				# y gap between 2 squares
-		self.size = 54 				# piece size
+		self.cs = (0.1*self.plz_h)-1			# square size (height and width)
+		self.x_gap = 0.1*self.cs 				# x gap between 2 squares
+		self.y_gap = 0.1*self.cs				# y gap between 2 squares
+		self.size = self.cs - self.x_gap 		# piece size
 
 		# parameters for the cemetery (place where we draw the pieces that have been taken)
-		self.cemetery_cs = 18
-		self.cemetery_size = 12
-		self.cemetery_y_gap = 22
+		self.cemetery_cs = 0.3*self.cs
+		self.cemetery_size = self.cemetery_cs - self.x_gap
+		self.cemetery_y_gap = 1.22*self.cemetery_cs
 
 
 
 		# Tkinter (graphical) objects
-		world = PanedWindow(self.fenetre,height=599,width=899)
-		self.playzone = Canvas(self.fenetre,height=599,width=599,bg='white')
-		controls = PanedWindow(self.fenetre,height=599,width=300,orient=VERTICAL)
+		world = PanedWindow(self.fenetre,height=self.h-1,width=self.w-1)
+		self.playzone = Canvas(self.fenetre,height=self.plz_h-1,width=self.plz_w-1,bg='white')
+		controls = PanedWindow(self.fenetre,height=self.plz_h-1,width=self.w-self.plz_w,orient=VERTICAL)
 
-		self.playzone.create_rectangle(1,1,598,598)
+		self.playzone.create_rectangle(1,1,self.plz_h-2,self.plz_w-2)
 
 
 		# label indicating the player whose turn it is
@@ -203,12 +206,12 @@ class Layout:
 		# getting where the click has happened
 
 		if self.player_ID == "player2" :
-			x = event.x / (self.plz_h/self.length)
-			y = event.y / (self.plz_w/self.length)
+			x = int(event.x / (self.plz_h/self.length))
+			y = int(event.y / (self.plz_w/self.length))
 
 		else :
-			x = 9 - event.x/(self.plz_h/self.length)
-			y = 9 - event.y/(self.plz_w/self.length)
+			x = int(9 - event.x/(self.plz_h/self.length))
+			y = int(9 - event.y/(self.plz_w/self.length))
 
 		send_sthg(self.serv_socket,["coords",[x,y]])
 
