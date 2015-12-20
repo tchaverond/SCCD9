@@ -104,6 +104,7 @@ class Board :
 
 		elif self.player_end_turn :
 			self.player = 3-self.player
+			self.player_end_turn = False
 
 
 		##########
