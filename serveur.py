@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*
 
-#from Tkinter import*
 import time
 import os
 import re
@@ -53,6 +52,7 @@ class Board :
 		return "".join(string)
 
 
+
 	# putting all pieces at their starting places
 	def init_board (self) :
 
@@ -66,12 +66,11 @@ class Board :
 				self.grid[i][j] = 1 + j/5
 			self.grid[i][5] = 0
 
-		#print self
 
 
 
 
-	def left_click (self, x, y):
+	def left_click (self, x, y) :
 		# there are 2 possibilities : whether the player wants to select a piece or to move it
 
 		if self.highlight == [] :					# if no piece is already selected (selecting a piece to move or huffing an opponent's one)
@@ -98,35 +97,12 @@ class Board :
 				send_sthg(self.sockets[self.player],["method","self.highlight_piece_1(coords)","coords",self.highlight])
 			else :
 				send_sthg(self.sockets[self.player],["method","self.highlight_piece_2(coords)","coords",self.highlight])
-			#send highlight_piece_1, highlight 	JOUEUR COURANT (self.player)
-			#send_sthg(self.sockets[self.player],["method","self.play()"])
-			#send loop 							JOUEUR COURANT (self.player)
+			#send highlight_piece_1/2, highlight 	JOUEUR COURANT (self.player)
+
 
 		elif self.player_end_turn :
 			self.player = 3-self.player
 			self.player_end_turn = False
-
-
-		##########
-		# if player == 1 :
-		# 	self.draw_grid_1(self.game.grid,self.game.queens) 
-
-		# else :
-		# 	self.draw_grid_2(self.game.grid,self.game.queens) #SEND tell the client to draw the game
-
-		# self.draw_cemetery(self.game.grid,self.game.queens) #SEND tell the client to draw the game
-
-
-		# and highlighting the currently selected piece
-		# if self.game.highlight != [] :
-
-		# 	if self.game.player == 1 :
-		# 		self.highlight_piece_1(self.game.highlight)
-		# 	else :
-		# 		self.highlight_piece_2(self.game.highlight)
-
-		#self.check_end()
-		##########
 
 
 
@@ -150,7 +126,6 @@ class Board :
 
 					self.highlight = [x,y]
  
-
 
 
 	# now the player wants to move the selected piece to the clicked square
@@ -302,11 +277,6 @@ class Board :
 	# ending the player's turn (i.e. switching players and cleaning all temporary variables)
 	def end_turn (self) :
 
-		# if self.player == 1 :
-		# 	self.player = 2
-
-		# else :
-		# 	self.player = 1
 		self.player_end_turn = True
 
 		self.moves = []
@@ -592,6 +562,9 @@ class Board :
 				j = j+1
 
 
+
+
+
 	def check_end (self) :
 
 		i = 0
@@ -611,25 +584,24 @@ class Board :
 				i = i+1
 
 
+
 	def partie_en_cours(self) :
 
-		print "Telling whose it is to play"
+		#print "Telling whose it is to play"
 		send_sthg(self.sockets[self.player],["method","self.play()"])
-		#send_sthg(self.sockets[3-self.player],["method","self.wait()"])
 		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
-		#send méthode: wait, JOUEUR QUI ATTEND   -> done
 
-		print "Waiting for coords"
+		#print "Waiting for coords"
 		coords = self.handle(recv_sthg(self.sockets[self.player]))
 		#recv identifiant; x; y   -> done
 
-		print "Entering left click", coords[0],coords[1]
+		#print "Entering left click", coords[0],coords[1]
 		self.left_click(coords[0], coords[1])
-		print "Exiting left click", coords[0],coords[1]
+		#print "Exiting left click", coords[0],coords[1]
 
 		#On vérifie si la partie est terminée
 		self.check_end()
-		print "Checked for end", self.end
+		#print "Checked for end", self.end
 
 		if self.end == True :
 
@@ -638,10 +610,9 @@ class Board :
 
 
 
-
 	def handle (self, message) :
 
-		print "Got them !"
+		#print "Got them !"
 		if "coords" in message :
 
 			coords = unstring_coords(message[1+message.index("coords")])
@@ -652,6 +623,7 @@ class Board :
 			# TODO (?)
 
 		return coords
+
 
 
 def unstring_coords (coords) :
@@ -700,6 +672,7 @@ def recv_sthg(sock):
 		print 'ERROR'
 
 
+
 def main_serveur(socket_1, ip1, socket_2, ip2) :
 	
 	#Creation de la partie
@@ -707,18 +680,18 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 
 	#send à chaque joueur joueur1/joueur2
 	socket_1.sendall("player1")
-	ok=False
+	ok = False
 	while not ok:
-		data=socket_1.recv(1024)
+		data = socket_1.recv(1024)
 		if 'ok' in data:
-			ok=True
+			ok = True
 
 	socket_2.sendall("player2")
-	ok=False
+	ok = False
 	while not ok:
-		data=socket_2.recv(1024)
+		data = socket_2.recv(1024)
 		if 'ok' in data:
-			ok=True
+			ok = True
 
 	send_sthg(socket_1,["method","self.draw_grid_1(grid)","grid",partie.grid])
 	send_sthg(socket_2,["method","self.draw_grid_2(grid)","grid",partie.grid])
@@ -730,13 +703,6 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 		print "One more loop"
 		partie.partie_en_cours()
 
-
-# def wait(number, ip) :
-
-# 	print "Waiting for 2 players"
-# 	ip[0].sendall("En attente d'un second joueur \n")
-# 	while stop[number]:
-# 		pass
 
 
 
@@ -778,56 +744,3 @@ finally :
 		t.join()
 
 	s.close()
-
-# s.listen(5)
-# threads_wait = {}
-# threads_play = []
-# ip = {}
-# global stop
-# stop = {}
-# global number
-# number = 0
-
-# try:
-	
-# 	while True:
-
-# 		stop[number] = False
-# 		(Newsock, (Newip, Newport)) = s.accept()
-# 		ip[number] = [Newsock, Newip]
-# 		my_thread = threading.Thread(target=wait, args=(number,ip[number]))
-# 		my_thread.start()
-# 		threads_wait[number] = my_thread
-# 		number += 1
-
-
-# 		if len(threads_wait) >= 2 :			
-
-# 			temp = min(stop.keys())
-# 			print temp,ip
-# 			ip[temp][0].sendall("Opponent_found \n")
-# 			ip1 = ip.pop(temp)
-# 			del stop[temp]
-# 			threads_wait[temp].join()
-# 			del threads_wait[temp]
-
-# 			temp = min(stop.keys())
-# 			ip[temp][0].sendall("Opponent_found \n")
-# 			ip2 = ip.pop(temp)
-# 			del stop[temp]
-# 			threads_wait[temp].join()
-# 			del threads_wait[temp]
-
-# 			my_thread_play=threading.Thread(target=main_serveur, args=(ip1,ip2))
-# 			print "blablabla"
-# 			threads_play.append(my_thread_play)
-
-
-
-
-# finally:
-
-# 	for t in threads_play:
-# 		t.join()
-
-# 	s.close() 

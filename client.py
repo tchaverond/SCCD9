@@ -4,10 +4,9 @@ from Tkinter import*
 import time
 import os
 import re
-import inspect
+#import inspect
 from socket import*
 
-#import serveur #SCCD9
 
 
 class Layout:
@@ -22,15 +21,13 @@ class Layout:
 		self.w = min(self.fenetre.winfo_screenwidth() * 0.85, 1.5*self.h)
 
 
-		self.click = False
-		self.my_turn=False
+		self.click = False 					# only used to exit play() method upon click
+		self.my_turn = False				# preventing the client from sending coordinates on click when waiting for the opponent
 
-		self.player_ID=player_ID
+		self.player_ID = player_ID			# this player's ID (either 1 or 2, determined by the server)
 
-		self.serv_socket=serv_socket
+		self.serv_socket = serv_socket		# server socket
 
-		# game engine : rules, pace...
-		#self.game = SCCD9.Board()
 
 		self.plz_h = min(self.h,0.67*self.w)		# board height
 		self.plz_w = self.plz_h						# board width
@@ -72,21 +69,6 @@ class Layout:
 		controls.add(self.cemetery)
 
 
-		# -__-__-__-__-__-__-__-__-__-__-__-__-__- deprecated -__-__-__-__-__-__-__-__-__-__-__-__-__- #
-		# # auto-rotation checkbox
-		# self.autorot = IntVar()
-		# self.autorot.set(0)
-		# check_autorot = Checkbutton(controls,text="Auto-rotate",variable=self.autorot,height=15)
-
-		# controls.add(check_autorot)
-
-		# # reset button (hopefully will after be included in a menu)
-		# reset_button = Button(controls,text="Restart",command=self.reset)
-
-		# controls.add(reset_button)
-		# -__-__-__-__-__-__-__-__-__-__-__-__-__- deprecated -__-__-__-__-__-__-__-__-__-__-__-__-__- #
-
-
 		world.add(self.playzone)
 		world.add(controls)
 		world.pack()
@@ -96,31 +78,20 @@ class Layout:
 		self.playzone.bind("<Button-1>", self.left_click)
 
 
-		# -__-__-__-__- deprecated -__-__-__-__- #
-		# # drawing the board for the first time
-		# self.draw_grid_2(self.game.grid)
-		# -__-__-__-__- deprecated -__-__-__-__- #
 
 
-	def play(self):
-		print "Your turn!"
+
+	def play (self) :
+
+		#print "Your turn!"
 		self.my_turn = True
 		self.click = False
 		while not self.click:
 			self.fenetre.update_idletasks()
 			self.fenetre.update()
-		print "Out of play()"
+		#print "Out of play()"
 		self.my_turn = False
 
-
-	# def wait(self):
-	# 	print "Wait!"
-	# 	ok=False
-	# 	while not ok:
-	# 		data=self.serv_socket.recv(1024)
-	# 		if 'ok' in data:
-	# 			ok=True
-	# 	print "Out of wait()"
 
 
 	# drawing the grid with player 1 below
@@ -222,66 +193,9 @@ class Layout:
 			send_sthg(self.serv_socket,["coords",[x,y]])
 
 
-		#send identifiant_joueur, x, y 
-		#recv draw_grid_1, grid, queens OU 	draw_grid_2, grid, queens
-		#recv draw_cemetery, grid, queens	
-		#recv highlight_piece_1, highlight 	OU NON
-		#recv loop 							OU NON			
-
-		# # updating the drawing of the grid
-		# if self.game.player == 1 :
-		# 	self.draw_grid_1(self.game.grid,self.game.queens)
-		# else :
-		# 	self.draw_grid_2(self.game.grid,self.game.queens)
-
-		# self.draw_cemetery(self.game.grid,self.game.queens)
 
 
-		# # and highlighting the currently selected piece
-		# if self.game.highlight != [] :
-
-		# 	if self.game.player == 1 :
-		# 		self.highlight_piece_1(self.game.highlight)
-		# 	else :
-		# 		self.highlight_piece_2(self.game.highlight)
-
-
-		# if self.game.player == 1 :
-		# 	self.player_now.set("Now playing : Red")
-		# else :
-		# 	self.player_now.set("Now playing : Green")
-
-		# self.check_end()
-
-
-
-	# def check_end (self) :
-
-	# 	i = 0
-	# 	end = True
-	# 	while i < self.length and end == True :
-	# 		if 1 in self.game.grid[i] :
-	# 			end = False
-	# 		i = i+1
-
-	# 	if end == True :
-	# 		self.player_now.set("The green guy has won !")
-
-	# 	i = 0
-	# 	end = True
-	# 	while i < self.length and end == True :
-	# 		if 2 in self.game.grid[i] :
-	# 			end = False
-	# 		i = i+1
-
-	# 	if end == True :
-	# 		self.player_now.set("The red guy has won !")
-
-
-	def check_end(winner):
-		
-		# if winner == 'nowinner':
-		# 	break
+	def check_end (winner) :
 		
 		if winner =='player1':
 			self.player_now.set("The red guy has won !")
@@ -292,35 +206,12 @@ class Layout:
 
 
 
-
-
-
-	# -__-__-__-__-__- deprecated -__-__-__-__-__- #
-	# def reset (self) :
-
-	# 	self.fenetre.destroy()
-	# 	os.system("python SCCD9_interface.py")
-	# -__-__-__-__-__- deprecated -__-__-__-__-__- #
-
-
-
-	# # (Tkinter's mainloop)
-	# def click_loop (self) :
-
-	# 	#afficher à ton tour de jouer
-	# 	#self.fenetre.mainloop()
-	# 	self.click = False
-	# 	while not self.click:
-	# 		self.fenetre.update_idletasks()
-	# 		self.fenetre.update()
-
-
 	def run (self) :
 
 		while True :
 
-			print "Waiting for an order."
-			message=recv_sthg(self.serv_socket)
+			#print "Waiting for an order."
+			message = recv_sthg(self.serv_socket)
 			self.handle(message)
 			self.fenetre.update_idletasks()
 			self.fenetre.update()
@@ -347,7 +238,7 @@ class Layout:
 		else :
 
 			pass
-			# TODO 
+			# TODO (?)
 
 			
 
@@ -485,5 +376,5 @@ while opponent_found == False :
 		sC.sendall('ok')
 
 
-player_ID=data
+player_ID = data
 main_client(player_ID, sC)
