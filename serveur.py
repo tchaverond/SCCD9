@@ -80,6 +80,7 @@ class Board :
 		else :											# else the player wants to move a piece
 			self.move(x,y)							# we call the "move" method
 
+		
 		# updating the drawing of the grid
 		# everything done below :)
 
@@ -98,7 +99,7 @@ class Board :
 			else :
 				send_sthg(self.sockets[self.player],["method","self.highlight_piece_2(coords)","coords",self.highlight])
 			#send highlight_piece_1, highlight 	JOUEUR COURANT (self.player)
-			send_sthg(self.sockets[self.player],["method","self.play()"])
+			#send_sthg(self.sockets[self.player],["method","self.play()"])
 			#send loop 							JOUEUR COURANT (self.player)
 
 		elif self.player_end_turn :
@@ -611,18 +612,23 @@ class Board :
 
 	def partie_en_cours(self) :
 
+		print "Telling whose it is to play"
 		send_sthg(self.sockets[self.player],["method","self.play()"])
-		send_sthg(self.sockets[3-self.player],["method","self.wait()"])
+		#send_sthg(self.sockets[3-self.player],["method","self.wait()"])
 		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
 		#send méthode: wait, JOUEUR QUI ATTEND   -> done
 
+		print "Waiting for coords"
 		coords = self.handle(recv_sthg(self.sockets[self.player]))
 		#recv identifiant; x; y   -> done
 
+		print "Entering left click", coords[0],coords[1]
 		self.left_click(coords[0], coords[1])
+		print "Exiting left click", coords[0],coords[1]
 
 		#On vérifie si la partie est terminée
 		self.check_end()
+		print "Checked for end", self.end
 
 		if self.end == True :
 
@@ -634,13 +640,14 @@ class Board :
 
 	def handle (self, message) :
 
+		print "Got them !"
 		if "coords" in message :
 
 			coords = unstring_coords(message[1+message.index("coords")])
 
 		else :
-
-			pass
+			print "I have an issue in handle !"
+			#pass
 			# TODO (?)
 
 		return coords
@@ -719,6 +726,7 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 
 	while not partie.end:
 
+		print "One more loop"
 		partie.partie_en_cours()
 
 

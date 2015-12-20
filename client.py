@@ -104,19 +104,23 @@ class Layout:
 
 	def play(self):
 		print "Your turn!"
+		self.my_turn = True
 		self.click = False
 		while not self.click:
 			self.fenetre.update_idletasks()
 			self.fenetre.update()
+		print "Out of play()"
+		self.my_turn = False
 
 
-	def wait(self):
-		print "Wait!"
-		ok=False
-		while not ok:
-			data=self.serv_socket.recv(1024)
-			if 'ok' in data:
-				ok=True
+	# def wait(self):
+	# 	print "Wait!"
+	# 	ok=False
+	# 	while not ok:
+	# 		data=self.serv_socket.recv(1024)
+	# 		if 'ok' in data:
+	# 			ok=True
+	# 	print "Out of wait()"
 
 
 	# drawing the grid with player 1 below
@@ -201,19 +205,21 @@ class Layout:
 	# method called by a left click on board
 	def left_click(self, event) :
 
-		self.click = True
+		if self.my_turn == True :
 
-		# getting where the click has happened
+			self.click = True
 
-		if self.player_ID == "player2" :
-			x = int(event.x / (self.plz_h/self.length))
-			y = int(event.y / (self.plz_w/self.length))
+			# getting where the click has happened
 
-		else :
-			x = int(9 - event.x/(self.plz_h/self.length))
-			y = int(9 - event.y/(self.plz_w/self.length))
+			if self.player_ID == "player2" :
+				x = int(event.x / (self.plz_h/self.length))
+				y = int(event.y / (self.plz_w/self.length))
 
-		send_sthg(self.serv_socket,["coords",[x,y]])
+			else :
+				x = int(9 - event.x/(self.plz_h/self.length))
+				y = int(9 - event.y/(self.plz_w/self.length))
+
+			send_sthg(self.serv_socket,["coords",[x,y]])
 
 
 		#send identifiant_joueur, x, y 
@@ -313,6 +319,7 @@ class Layout:
 
 		while True :
 
+			print "Waiting for an order."
 			message=recv_sthg(self.serv_socket)
 			self.handle(message)
 			self.fenetre.update_idletasks()
