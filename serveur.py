@@ -40,6 +40,8 @@ class Board :
 		self.possible_huff = []
 		self.end = False
 
+		self.winner = None
+
 
 
 	def __repr__ (self) :
@@ -607,7 +609,9 @@ class Board :
 		if self.end == True :
 
 			send_sthg(self.sockets[3-self.player],["method","self.win()"])
-			send_sthg(self.sockets[self.player],["method","self.lose()"])	
+			send_sthg(self.sockets[self.player],["method","self.lose()"])
+
+			self.winner = 3-self.player	
 
 
 
@@ -674,7 +678,7 @@ def recv_sthg(sock):
 
 
 
-def main_serveur(socket_1, ip1, socket_2, ip2) :
+def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 	
 	#Creation de la partie
 	partie = Board(socket_1,socket_2)
@@ -701,8 +705,18 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 
 	while not partie.end:
 
-		print "One more loop"
+		#print "One more loop"
 		partie.partie_en_cours()
+
+
+	# to be changed (Elo rating ?)
+	if partie.winner == 1 :
+		all_scores[login_1] += 1
+		all_scores[login_2] -= 1
+
+	else :
+		all_scores[login_1] -= 1
+		all_scores[login_2] += 1
 
 
 
@@ -720,15 +734,32 @@ except :
 	print "Couldn't find file 'accounts.txt'"
 	sys.exit(1)
 
+try :
+
+	scores = open("scores.txt","r")
+
+except :
+
+	print "Couldn't find file 'scores.txt'"
+	sys.exit(1)
+
 temp = (accounts.read()).split("\r")
 temp.pop()
-print temp
 
 all_accounts = {}
 for i in temp :
 	temp = i.split(";")
 	all_accounts[temp[0]] = temp[1]
 print all_accounts
+
+temp = (scores.read()).split("\r")
+temp.pop()
+
+all_scores = {}
+for i in temp :
+	temp = i.split(";")
+	all_scores[temp[0]] = int(temp[1])
+print all_scores
 
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
@@ -763,6 +794,7 @@ try :
 			if new :
 				all_accounts[login] = pw
 				account_infos_1 = [login,pw]
+				all_scores[login] = 0                   # to be changed
 				socket_1.sendall("Ok")
 			elif login in all_accounts.keys() :
 				if all_accounts[login] == pw :
@@ -788,6 +820,7 @@ try :
 			if new :
 				all_accounts[login] = pw
 				account_infos_2 = [login,pw]
+				all_scores[login] = 0   
 				socket_2.sendall("Ok")
 			elif login in all_accounts.keys() :
 				if all_accounts[login] == pw :
@@ -802,7 +835,7 @@ try :
 				socket_2.close()
 
 		socket_2.sendall("Waiting for an opponent.")
-		newthread = Thread(target=main_serveur,args=(socket_1,ip1,socket_2,ip2))
+		newthread = Thread(target=main_serveur,args=(socket_1,ip1,account_infos_1[0],socket_2,ip2,account_infos_2[0]))
 		threads.append(newthread)
 		newthread.start()
 
@@ -816,5 +849,11 @@ finally :
 	for i in all_accounts.keys() :
 		accounts.write(";".join([i,all_accounts[i]]))
 		accounts.write("\r")
+
+	scores = open("scores.txt","w")
+	for i in all_scores.keys() :
+		scores.write(";".join([i,str(all_scores[i]])))
+		scores.write("\r")
+
 
 	s.close()
