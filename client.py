@@ -1,24 +1,74 @@
 # -*- coding: utf-8 -*
 
 from Tkinter import*
+import tkMessageBox
+
 import time
+import sys
 import os
 import re
 #import inspect
 from socket import*
 
+import tkDialog
+
+
+
+class LoginWindow(tkDialog.Dialog):
+
+	def body(self, master):
+
+		Label(master, text="Login:").grid(row=0)
+		Label(master, text="Password:").grid(row=1)
+
+	 	self.e1 = Entry(master)
+		self.e2 = Entry(master)
+
+		self.e1.grid(row=0, column=1)
+		self.e2.grid(row=1, column=1)
+		return self.e1 # initial focus
+
+	def apply(self):
+
+		login = self.e1.get()
+		pw = self.e2.get()
+		self.result = [login, pw]
+
+
+
+class LogRegGuestWindow(tkDialog.Ask3way):
+
+	def body(self, master):
+
+		Label(master, text="Already have an account ?").grid(row=0)
+		return None 
+
+	def apply_login(self):
+
+		self.result = 1
+
+	def apply_register(self):
+
+		self.result = 2
+
+	def apply_guest(self):
+
+		self.result = 3
+
+
+
 
 
 class Layout:
 
-	def __init__(self,player_ID, serv_socket):
+	def __init__(self, player_ID, serv_socket) :
 
 		self.fenetre = Tk()
 		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (online)")
 		
 
-		self.h = self.fenetre.winfo_screenheight() * 0.85
-		self.w = min(self.fenetre.winfo_screenwidth() * 0.85, 1.5*self.h)
+		self.h = self.fenetre.winfo_screenheight() * 0.5
+		self.w = min(self.fenetre.winfo_screenwidth() * 0.5, 1.5*self.h)
 
 
 		self.click = False 					# only used to exit play() method upon click
@@ -172,6 +222,8 @@ class Layout:
 	def highlight_piece_2 (self, coords) :
 
 		self.playzone.create_oval(self.cs*coords[0]+self.x_gap+self.size/6,self.cs*coords[1]+self.y_gap+self.size/6,self.cs*coords[0]+self.x_gap+5*self.size/6,self.cs*coords[1]+self.y_gap+5*self.size/6,outline='black')
+
+
 
 	# method called by a left click on board
 	def left_click(self, event) :
@@ -361,9 +413,53 @@ def main_client(player_ID, sC):
 ######################################################################
 ######################################################################
 
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+# -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+mainwindow = Tk()
+mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
+sthg = PanedWindow(mainwindow, height=mainwindow.winfo_screenheight()*0.5, width=min(mainwindow.winfo_screenwidth()*0.5, 1.5*mainwindow.winfo_screenheight()*0.5))
+sthg.pack()
+
+choice = None
+
+while not choice :
+
+	temp = LogRegGuestWindow(mainwindow,"Welcome")
+	choice = temp.result
+
+	if temp.result == 1 :
+		temp2 = LoginWindow(mainwindow,"Login Window")
+		infos = temp2.result
+		infos.append(str(0))
+
+	elif temp.result == 2 :
+		temp2 = LoginWindow(mainwindow,"Register Window")
+		infos = temp2.result
+		infos.append(str(1))
+
+	elif temp.result == 3 :
+		infos = ['guest','None',str(1)]
+
+	else :
+		print "Error in Login !"
+		sys.exit(0)
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
 
 sC = socket(AF_INET,SOCK_STREAM)
 sC.connect(("127.0.0.1",4242))
+
+sC.sendall(";".join(infos))
+answer = sC.recv(1024)
+
+if answer == "Wrong" :
+	tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
+	sC.close()
+	sys.exit(0)
 
 
 opponent_found = False
@@ -377,4 +473,5 @@ while opponent_found == False :
 
 
 player_ID = data
+mainwindow.destroy()
 main_client(player_ID, sC)

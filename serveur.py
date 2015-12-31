@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*
 
 import time
+import sys
 import os
 import re
 from socket import*
@@ -710,6 +711,29 @@ def main_serveur(socket_1, ip1, socket_2, ip2) :
 ######################################################################
 
 
+try :
+
+	accounts = open("accounts.txt","r")
+
+except :
+
+	print "Couldn't find file 'accounts.txt'"
+	sys.exit(1)
+
+temp = (accounts.read()).split("\r")
+temp.pop()
+print temp
+
+all_accounts = {}
+for i in temp :
+	temp = i.split(";")
+	all_accounts[temp[0]] = temp[1]
+print all_accounts
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+
 
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
@@ -728,10 +752,55 @@ try :
 
 		s.listen(5)
 		print "Waiting for someone."
-		(socket_1, (ip1,port)) = s.accept()
+		account_infos_1 = None
+		account_infos_2 = None
+
+		while not account_infos_1 :
+
+			(socket_1, (ip1,port)) = s.accept()
+			login,pw,new = socket_1.recv(4096).split(";")
+			new = int(new)
+			if new :
+				all_accounts[login] = pw
+				account_infos_1 = [login,pw]
+				socket_1.sendall("Ok")
+			elif login in all_accounts.keys() :
+				if all_accounts[login] == pw :
+					account_infos_1 = [login,pw]
+					socket_1.sendall("Ok")
+
+				else :
+					socket_1.sendall("Wrong")
+					socket_1.close()
+			else :
+				socket_1.sendall("Wrong")
+				socket_1.close()
+
+
 		socket_1.sendall("Waiting for an opponent.")
 		print "Waiting for someone else."
-		(socket_2, (ip2,port2)) = s.accept()
+
+		while not account_infos_2 :
+
+			(socket_2, (ip2,port)) = s.accept()
+			login,pw,new = socket_2.recv(4096).split(";")
+			new = int(new)
+			if new :
+				all_accounts[login] = pw
+				account_infos_2 = [login,pw]
+				socket_2.sendall("Ok")
+			elif login in all_accounts.keys() :
+				if all_accounts[login] == pw :
+					account_infos_2 = [login,pw]
+					socket_2.sendall("Ok")
+
+				else :
+					socket_2.sendall("Wrong")
+					socket_2.close()
+			else :
+				socket_2.sendall("Wrong")
+				socket_2.close()
+
 		socket_2.sendall("Waiting for an opponent.")
 		newthread = Thread(target=main_serveur,args=(socket_1,ip1,socket_2,ip2))
 		threads.append(newthread)
@@ -742,5 +811,10 @@ finally :
 	
 	for t in threads :
 		t.join()
+
+	accounts = open("accounts.txt","w")
+	for i in all_accounts.keys() :
+		accounts.write(";".join([i,all_accounts[i]]))
+		accounts.write("\r")
 
 	s.close()
