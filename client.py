@@ -73,6 +73,7 @@ class Layout:
 
 		self.click = False 					# only used to exit play() method upon click
 		self.my_turn = False				# preventing the client from sending coordinates on click when waiting for the opponent
+		self.end_game = False				# used to exit run() when game has ended
 
 		self.player_ID = player_ID			# this player's ID (either 1 or 2, determined by the server)
 
@@ -141,6 +142,17 @@ class Layout:
 			self.fenetre.update()
 		#print "Out of play()"
 		self.my_turn = False
+
+
+	def win (self) :
+
+		tkMessageBox.showinfo("SCCD9", "Congratulations! You won!")
+		self.end_game = True
+
+	def lose (self) :
+
+		tkMessageBox.showinfo("SCCD9", "You lost! Maybe next time!")
+		self.end_game = True
 
 
 
@@ -260,7 +272,7 @@ class Layout:
 
 	def run (self) :
 
-		while True :
+		while not self.end_game :
 
 			#print "Waiting for an order."
 			message = recv_sthg(self.serv_socket)
@@ -397,15 +409,15 @@ def main_client(player_ID, sC):
 	Checkers = Layout(player_ID, sC)
 	print Checkers.player_ID
 
-	# inspection = inspect.getmembers(Checkers, predicate=inspect.ismethod)
-	# global methodes
-	# methodes=[]
-	# for met in inspection:
-	# 	methodes.append(met[0])
-
-	#print methodes
 	Checkers.run()
 
+	if tkMessageBox.askyesno("SCCD9", "Play again ?") :
+		Checkers.fenetre.destroy()
+		return 1
+
+	else :
+		Checkers.fenetre.destroy()
+		return 0
 
 
 
@@ -416,6 +428,7 @@ def main_client(player_ID, sC):
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
 
 mainwindow = Tk()
 mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
@@ -446,32 +459,46 @@ while not choice :
 		print "Error in Login !"
 		sys.exit(0)
 
+again = 2
 
-# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
-
-
-sC = socket(AF_INET,SOCK_STREAM)
-sC.connect(("127.0.0.1",4242))
-
-sC.sendall(";".join(infos))
-answer = sC.recv(1024)
-
-if answer == "Wrong" :
-	tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
-	sC.close()
-	sys.exit(0)
+	# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
 
-opponent_found = False
+while again != 0 :
 
-while opponent_found == False :
-	data = sC.recv(4096)
-	print data
-	if "player" in data :
-		opponent_found = True
-		sC.sendall('ok')
+	# handling the case of a newly registered player that plays several games in a row (creating his account only once)
+	if again == 1 and infos[0] != 'guest' and infos[2] == 1 :
+		infos[2] == 0
+
+	try :
+
+		sC = socket(AF_INET,SOCK_STREAM)
+		sC.connect(("127.0.0.1",4242))
+
+		sC.sendall(";".join(infos))
+		answer = sC.recv(1024)
+
+		if answer == "Wrong" :
+			tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
+			sC.close()
+			sys.exit(0)
 
 
-player_ID = data
-mainwindow.destroy()
-main_client(player_ID, sC)
+		opponent_found = False
+
+		while opponent_found == False :
+			data = sC.recv(1024)
+			print data
+			if "player" in data :
+				opponent_found = True
+				sC.sendall('ok')
+
+
+		player_ID = data
+		mainwindow.destroy()
+		again = main_client(player_ID, sC)
+
+		sC.close()
+
+
+print "See you !"
