@@ -710,7 +710,16 @@ def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 		partie.partie_en_cours()
 
 
-	# to be changed (Elo rating ?)
+	update_scores(login_1,login_2)
+
+
+
+# -__-__-__-__-__-__-__-__-__-__-     Score Methods     -__-__-__-__-__-__-__-__-__-__- #
+
+
+def update_scores (login_1,login_2) :
+
+	# to be changed to Elo rating
 	if partie.winner == 1 :
 		all_scores[login_1] += 1
 		all_scores[login_2] -= 1
@@ -718,6 +727,10 @@ def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 	else :
 		all_scores[login_1] -= 1
 		all_scores[login_2] += 1
+
+	# one more match has been played
+	all_scores[login_1][1] += 1
+	all_scores[login_2][2] += 1
 
 
 
@@ -759,7 +772,7 @@ temp.pop()
 all_scores = {}
 for i in temp :
 	temp = i.split(";")
-	all_scores[temp[0]] = int(temp[1])
+	all_scores[temp[0]] = [int(temp[1]),int(temp[2])]
 print all_scores
 
 
@@ -795,7 +808,8 @@ try :
 			if new :
 				all_accounts[login] = pw
 				account_infos_1 = [login,pw]
-				all_scores[login] = 0                   # to be changed
+				all_scores[login][0] = 500                   # Elo initial rating
+				all_scores[login][1] = 0                     # number of matches played
 				socket_1.sendall("Ok")
 			elif login in all_accounts.keys() :
 				if all_accounts[login] == pw :
@@ -821,7 +835,8 @@ try :
 			if new :
 				all_accounts[login] = pw
 				account_infos_2 = [login,pw]
-				all_scores[login] = 0   
+				all_scores[login][0] = 500
+				all_scores[login][1] = 0   
 				socket_2.sendall("Ok")
 			elif login in all_accounts.keys() :
 				if all_accounts[login] == pw :
@@ -853,7 +868,12 @@ finally :
 
 	scores = open("scores.txt","w")
 	for i in all_scores.keys() :
-		scores.write(";".join([i,str(all_scores[i])]))
+
+		to_write = i
+		for j in xrange(0,2,1) :
+			to_write += ";"+str(all_scores[i][j])
+
+		scores.write(to_write)
 		scores.write("\r")
 
 
