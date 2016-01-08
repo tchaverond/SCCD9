@@ -717,22 +717,50 @@ def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 # -__-__-__-__-__-__-__-__-__-__-     Score Methods     -__-__-__-__-__-__-__-__-__-__- #
 
 
-def update_scores (login_1,login_2) :
+def update_scores (login_1, login_2) :
 
-	# to be changed to Elo rating
-	if partie.winner == 1 :
-		all_scores[login_1] += 1
-		all_scores[login_2] -= 1
-
-	else :
-		all_scores[login_1] -= 1
-		all_scores[login_2] += 1
-
+	update_Elo(partie.winner,login_1,login_2)
+	
 	# one more match has been played
 	all_scores[login_1][1] += 1
-	all_scores[login_2][2] += 1
+	all_scores[login_2][1] += 1
 
 
+
+def update_Elo (winner, player1, player2) :
+
+	# current Elos
+	Elo1 = all_scores[player1][0]
+	Elo2 = all_scores[player2][0]
+	print "Current Elos", Elo1, Elo2
+	# current number of matches played
+	m1 = all_scores[player1][1]
+	m2 = all_scores[player2][1]
+
+	if m1 < 70 :
+		k1 = 80.0 / (1+0.1*m1)
+	else :
+		k1 = 10
+	if m2 < 70 :
+		k2 = 80.0 / (1+0.1*m2)
+	else :
+		k2 = 10
+	print "K values", k1, k2
+
+	prob = 1 / (1 + 10**((Elo1-Elo2)/400.0))
+
+	# calculating new Elos
+	if winner == 1 :
+		Elo1 += k1 * (1 - (1-prob))
+		Elo2 += k2 * (0 - prob)
+
+	else :
+		Elo1 += k1 * (0 - (1-prob))
+		Elo2 += k2 * (1 - prob)
+
+	# updating scores in dictionary
+	all_scores[player1][0] = Elo1
+	all_scores[player2][0] = Elo2
 
 
 ######################################################################
