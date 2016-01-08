@@ -125,7 +125,8 @@ class Board :
 
 					self.check_huff(x,y)
 
-				else :
+				# if the player has selected one of his pieces (in order to move it)
+				elif self.grid[x][y] == self.player :
 
 					self.highlight = [x,y]
  
@@ -852,7 +853,7 @@ finally :
 
 	scores = open("scores.txt","w")
 	for i in all_scores.keys() :
-		scores.write(";".join([i,str(all_scores[i]])))
+		scores.write(";".join([i,str(all_scores[i])]))
 		scores.write("\r")
 
 

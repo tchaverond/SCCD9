@@ -76,7 +76,8 @@ class Board :
 
 					self.check_huff(x,y)
 
-				else :
+				# if the player has selected one of his pieces (in order to move it)
+				elif self.grid[x][y] == self.player :
 
 					self.highlight = [x,y]
  
