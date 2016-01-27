@@ -14,6 +14,7 @@ import tkDialog
 
 
 
+# defines the popup window used for asking login informations to a player (not included in minimalistic popup windows package 'tkMessageBox')
 class LoginWindow(tkDialog.Dialog):
 
 	def body(self, master):
@@ -36,6 +37,7 @@ class LoginWindow(tkDialog.Dialog):
 
 
 
+# defines a popup window type with a three-way choice through buttons (here used when first launching the game)
 class LogRegGuestWindow(tkDialog.Ask3way):
 
 	def body(self, master):
@@ -411,6 +413,7 @@ def main_client(player_ID, sC):
 
 	Checkers.run()
 
+	# once the game has ended, the player is asked (through a minimalistic popup window (from the package 'tkMessageBox')) to choose to play again or leave
 	if tkMessageBox.askyesno("SCCD9", "Play again ?") :
 		Checkers.fenetre.destroy()
 		return 1
@@ -422,8 +425,8 @@ def main_client(player_ID, sC):
 
 
 
-######################################################################
-######################################################################
+##############################################################################################################################################################
+##############################################################################################################################################################
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
@@ -432,9 +435,14 @@ def main_client(player_ID, sC):
 
 mainwindow = Tk()
 mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
+# creating the main window, and adapting its size to the user's screen
+# this is a temporary one which gets destroyed as soon as the game starts
+# it is only here for popup windows to work properly, and maybe for design purposes (what about adding a nice image/drawing as background ?)
 sthg = PanedWindow(mainwindow, height=mainwindow.winfo_screenheight()*0.5, width=min(mainwindow.winfo_screenwidth()*0.5, 1.5*mainwindow.winfo_screenheight()*0.5))
 sthg.pack()
 
+# upon starting the game, the player can whether login to his account, create a new one, or play as guest (it means that his performance won't be remembered)
+# these options are displayed through (not so fancy) popup windows
 choice = None
 
 while not choice :
@@ -459,7 +467,8 @@ while not choice :
 		print "Error in Login !"
 		sys.exit(0)
 
-again = 2
+# when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), hence why not again = -1 ?
+again = -1
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
@@ -472,20 +481,24 @@ while again != 0 :
 
 	try :
 
+		# connecting to the server
 		sC = socket(AF_INET,SOCK_STREAM)
 		sC.connect(("127.0.0.1",4242))
 
+		# and immediately sending account infos
 		sC.sendall(";".join(infos))
 		answer = sC.recv(1024)
 
+		# if those infos are wrong, the program ends, and the player has to enter his account infos again
 		if answer == "Wrong" :
 			tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
 			sC.close()
 			sys.exit(0)
 
-
+		# if they are right, we can go on
 		opponent_found = False
 
+		# waiting until an opponent is found
 		while opponent_found == False :
 			data = sC.recv(1024)
 			print data
@@ -494,15 +507,22 @@ while again != 0 :
 				sC.sendall('ok')
 
 
+		# once found, the game can starts
 		player_ID = data
+		# so we destroy the temporary window
 		mainwindow.destroy()
+		# and create the real game frame
 		again = main_client(player_ID, sC)
+		# this method returns by returning 1 if the player has chosen to play one more game, and 0 if he decides to leave
 
+		# currently the connection is closed anyways (more simple as the server checks for NEW connections), 
+		# but opened again ('while' loop) if the player wishes to let another ruthless bloodbath occur (yes I'm talking about checkers, what's wrong ?)
 		sC.close()
 
 	except :
 
 		pass
+		# to be done
 
 
 print "See you !"

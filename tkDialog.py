@@ -1,6 +1,11 @@
 from Tkinter import *
 import os
 
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+# -  This contains classes for creating (somehow) fancy popup windows for multi-use   - #
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
 class Dialog(Toplevel):
 
     def __init__(self, parent, title = None):

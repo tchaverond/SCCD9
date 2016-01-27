@@ -699,6 +699,7 @@ def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 		if 'ok' in data:
 			ok = True
 
+	# initial drawing
 	send_sthg(socket_1,["method","self.draw_grid_1(grid)","grid",partie.grid])
 	send_sthg(socket_2,["method","self.draw_grid_2(grid)","grid",partie.grid])
 
@@ -709,7 +710,7 @@ def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
 		#print "One more loop"
 		partie.partie_en_cours()
 
-
+	# at the end of the match, we calculate the updated scores for both players
 	update_scores(login_1,login_2)
 
 
@@ -763,10 +764,11 @@ def update_Elo (winner, player1, player2) :
 	all_scores[player2][0] = Elo2
 
 
-######################################################################
-######################################################################
+##############################################################################################################################################################
+##############################################################################################################################################################
 
 
+# loading account informations for all players in a dictionary, along with their scores in another
 try :
 
 	accounts = open("accounts.txt","r")
@@ -811,6 +813,7 @@ print all_scores
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("",4242))
+s.listen(8)
 #serversocket.bind((socket.gethostname(), 80))
 
 #PRENDRE EN COMPTE LE CAS OU LE JOUEUR IMPAIR SE DECONNECTE AVANT L'ARRIVEE DU JOUEUR PAIR
@@ -819,11 +822,12 @@ shutdown = False
 
 threads = []
 
+# !! Pour l'instant, le matchmaking ne tient pas compte des scores !!
+
 try :
 
 	while shutdown == False :
 
-		s.listen(5)
 		print "Waiting for someone."
 		account_infos_1 = None
 		account_infos_2 = None
@@ -831,23 +835,23 @@ try :
 		while not account_infos_1 :
 
 			(socket_1, (ip1,port)) = s.accept()
-			login,pw,new = socket_1.recv(4096).split(";")
+			login,pw,new = socket_1.recv(4096).split(";")    # account informations for player 1
 			new = int(new)
-			if new :
+			if new :                                         # account creation (add in dictionary) if it is a new player
 				all_accounts[login] = pw
 				account_infos_1 = [login,pw]
 				all_scores[login][0] = 500                   # Elo initial rating
 				all_scores[login][1] = 0                     # number of matches played
 				socket_1.sendall("Ok")
-			elif login in all_accounts.keys() :
+			elif login in all_accounts.keys() :              # if the player already has an account, we check if he entered the right password
 				if all_accounts[login] == pw :
 					account_infos_1 = [login,pw]
 					socket_1.sendall("Ok")
 
-				else :
+				else :                                       # if that's not the case, we tell him to try again (and close the connection)
 					socket_1.sendall("Wrong")
 					socket_1.close()
-			else :
+			else :                                           # if the player hit 'log in', but entered an unknown login (nickname), the connection is closed too
 				socket_1.sendall("Wrong")
 				socket_1.close()
 
@@ -855,7 +859,7 @@ try :
 		socket_1.sendall("Waiting for an opponent.")
 		print "Waiting for someone else."
 
-		while not account_infos_2 :
+		while not account_infos_2 :                          # all the same for player 2
 
 			(socket_2, (ip2,port)) = s.accept()
 			login,pw,new = socket_2.recv(4096).split(";")
@@ -879,11 +883,15 @@ try :
 				socket_2.close()
 
 		socket_2.sendall("Waiting for an opponent.")
+
+		# once both players have been found, we can effectively create the game
 		newthread = Thread(target=main_serveur,args=(socket_1,ip1,account_infos_1[0],socket_2,ip2,account_infos_2[0]))
 		threads.append(newthread)
 		newthread.start()
 
 
+# in case of an error or a volontary shutdown, we need to make sure not all data (account infos + scores) is lost, so we save it in 2 files :
+# (accounts.txt, scores.txt)
 finally :
 	
 	for t in threads :
