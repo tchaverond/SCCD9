@@ -574,19 +574,19 @@ class Board :
 
 		i = 0
 		self.end = True
-		# while i < len(self.grid) and self.end == True :
-		# 	if 1 in self.grid[i] :
-		# 		self.end = False
-		# 	i = i+1
+		while i < len(self.grid) and self.end == True :
+			if 1 in self.grid[i] :
+				self.end = False
+			i = i+1
 
-		# if self.end == False :
+		if self.end == False :
 
-		# 	i = 0
-		# 	self.end = True
-		# 	while i < len(self.grid) and self.end == True :
-		# 		if 2 in self.grid[i] :
-		# 			self.end = False
-		# 		i = i+1
+			i = 0
+			self.end = True
+			while i < len(self.grid) and self.end == True :
+				if 2 in self.grid[i] :
+					self.end = False
+				i = i+1
 
 
 
