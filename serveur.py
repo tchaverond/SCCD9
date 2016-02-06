@@ -772,7 +772,7 @@ def update_Elo (winner, login1, login2) :
 	# current Elos
 	Elo1 = all_scores[login1][0]
 	Elo2 = all_scores[login2][0]
-	print "Current Elos", Elo1, Elo2
+	# print "Current Elos", Elo1, Elo2
 	# current number of matches played
 	m1 = all_scores[login1][1]
 	m2 = all_scores[login2][1]
@@ -785,7 +785,7 @@ def update_Elo (winner, login1, login2) :
 		k2 = 80.0 / (1+0.1*m2)
 	else :
 		k2 = 10
-	print "K values", k1, k2
+	# print "K values", k1, k2
 
 	prob = 1 / (1 + 10**((Elo1-Elo2)/400.0))
 
@@ -920,7 +920,7 @@ signal.setitimer(signal.ITIMER_REAL,20,20)
 #############################################
 
 """
-Beahviour : The server constantly look for clients and try to match them with a player in the queue (if their respective Elos are close enough).
+Behaviour : The server constantly look for clients and try to match them with a player in the queue (if their respective Elos are close enough).
 If it manages to do it, a game is started in a separate thread with the 2 players.
 Else, the newcomer is added to the queue.
 Moreover, every 20 seconds, the server tries to match players in queue with each other by allowing a larger difference in Elos, growing as (waiting) time passes.

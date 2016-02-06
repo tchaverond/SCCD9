@@ -391,7 +391,6 @@ def send_sthg(sock, msg):
 def recv_sthg(sock):
 
 	msg = sock.recv(4096)
-	print msg
 	mess=msg.split(";")
 	if mess[0] == "$" and mess[-1] == "$":
 		mess.pop(0)
@@ -409,7 +408,7 @@ def recv_sthg(sock):
 def main_client(player_ID, sC):
 
 	Checkers = Layout(player_ID, sC)
-	print Checkers.player_ID
+	# print Checkers.player_ID
 
 	Checkers.run()
 
@@ -427,7 +426,6 @@ def main_client(player_ID, sC):
 	data = [""]
 	while data[0] != "play_again" :
 		data = recv_sthg(sC)
-		print data[0]
 
 	send_sthg(sC,[str(answer)])
 	print "answer sent"			
@@ -513,7 +511,6 @@ try :
 			# waiting until an opponent is found
 			while opponent_found == False :
 				data = sC.recv(1024)
-				print data
 				if "player" in data :
 					opponent_found = True
 					sC.sendall('ok')
@@ -529,7 +526,7 @@ try :
 
 			# bringing back the menu window
 			mainwindow.deiconify()	
-				
+
 
 except KeyboardInterrupt as e :
 
