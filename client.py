@@ -391,7 +391,7 @@ def send_sthg(sock, msg):
 def recv_sthg(sock):
 
 	msg = sock.recv(4096)
-
+	print msg
 	mess=msg.split(";")
 	if mess[0] == "$" and mess[-1] == "$":
 		mess.pop(0)
@@ -400,7 +400,7 @@ def recv_sthg(sock):
 		return mess
 
 	else: 
-		print 'ERROR'
+		print 'ERROR_C'
 
 
 
@@ -416,11 +416,23 @@ def main_client(player_ID, sC):
 	# once the game has ended, the player is asked (through a minimalistic popup window (from the package 'tkMessageBox')) to choose to play again or leave
 	if tkMessageBox.askyesno("SCCD9", "Play again ?") :
 		Checkers.fenetre.destroy()
-		return 1
+		answer = 1
 
 	else :
 		Checkers.fenetre.destroy()
-		return 0
+		answer = 0
+
+	# we forward his choice to the server
+
+	data = [""]
+	while data[0] != "play_again" :
+		data = recv_sthg(sC)
+		print data[0]
+
+	send_sthg(sC,[str(answer)])
+	print "answer sent"			
+
+	return answer
 
 
 
@@ -470,59 +482,60 @@ while not choice :
 # when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), hence why not again = -1 ?
 again = -1
 
-# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+##########
+try :
 
+	# connecting to the server
+	sC = socket(AF_INET,SOCK_STREAM)
+	sC.connect(("127.0.0.2",4242))
 
-while again != 0 :
+	# and immediately sending account infos
+	sC.sendall(";".join(infos))
+	answer = sC.recv(1024)
 
-	# handling the case of a newly registered player that plays several games in a row (creating his account only once)
-	if again == 1 and infos[0] != 'guest' and infos[2] == 1 :
-		infos[2] == 0
-
-	try :
-
-		# connecting to the server
-		sC = socket(AF_INET,SOCK_STREAM)
-		sC.connect(("127.0.0.1",4242))
-
-		# and immediately sending account infos
-		sC.sendall(";".join(infos))
-		answer = sC.recv(1024)
-
-		# if those infos are wrong, the program ends, and the player has to enter his account infos again
-		if answer == "Wrong" :
-			tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
-			sC.close()
-			sys.exit(0)
-
-		# if they are right, we can go on
-		opponent_found = False
-
-		# waiting until an opponent is found
-		while opponent_found == False :
-			data = sC.recv(1024)
-			print data
-			if "player" in data :
-				opponent_found = True
-				sC.sendall('ok')
-
-
-		# once found, the game can starts
-		player_ID = data
-		# so we destroy the temporary window
-		mainwindow.destroy()
-		# and create the real game frame
-		again = main_client(player_ID, sC)
-		# this method returns by returning 1 if the player has chosen to play one more game, and 0 if he decides to leave
-
-		# currently the connection is closed anyways (more simple as the server checks for NEW connections), 
-		# but opened again ('while' loop) if the player wishes to let another ruthless bloodbath occur (yes I'm talking about checkers, what's wrong ?)
+	# if those infos are wrong, the program ends, and the player has to enter his account infos again
+	if answer == "Wrong" :
+		tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
 		sC.close()
+		sys.exit(0)
 
-	except :
 
-		pass
-		# to be done
+	# if they are right, we can go on
+	else :
 
+	# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+
+		while again != 0 :
+
+			opponent_found = False
+
+			# waiting until an opponent is found
+			while opponent_found == False :
+				data = sC.recv(1024)
+				print data
+				if "player" in data :
+					opponent_found = True
+					sC.sendall('ok')
+
+			print "blabla"
+			# once found, the game can starts
+			player_ID = data
+			# so we hide the temporary window
+			mainwindow.withdraw()
+			#mainwindow.destroy()
+			# and create the real game frame
+			# this method returns 1 if the player has chosen to play one more game, and 0 if he decides to leave	
+			again = main_client(player_ID, sC)
+
+			# bringing back the menu window
+			mainwindow.deiconify()		
+
+except KeyboardInterrupt as e :
+
+	print "Argh!"
+	# to be done
+
+sC.close()
 
 print "See you !"

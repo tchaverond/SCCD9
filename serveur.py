@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*
 
+import signal
 import time
 import sys
 import os
@@ -11,7 +12,7 @@ from threading import*
 
 class Board :
 
-	def __init__ (self, socket_1, socket_2) :
+	def __init__ (self, sock1, sock2) :
 
 		self.height = 10
 		self.width = 10
@@ -21,7 +22,7 @@ class Board :
 
 
 		# variables holding the state of the game
-		self.sockets = {1:socket_1,2:socket_2}
+		self.sockets = {1:sock1,2:sock2}
 		self.player = 2 				# whose turn it is to play
 		self.highlight = []				# currently selected piece (coordinates on the board)
 		self.moves = [] 				# possible moves for currently selected piece
@@ -573,19 +574,19 @@ class Board :
 
 		i = 0
 		self.end = True
-		while i < len(self.grid) and self.end == True :
-			if 1 in self.grid[i] :
-				self.end = False
-			i = i+1
+		# while i < len(self.grid) and self.end == True :
+		# 	if 1 in self.grid[i] :
+		# 		self.end = False
+		# 	i = i+1
 
-		if self.end == False :
+		# if self.end == False :
 
-			i = 0
-			self.end = True
-			while i < len(self.grid) and self.end == True :
-				if 2 in self.grid[i] :
-					self.end = False
-				i = i+1
+		# 	i = 0
+		# 	self.end = True
+		# 	while i < len(self.grid) and self.end == True :
+		# 		if 2 in self.grid[i] :
+		# 			self.end = False
+		# 		i = i+1
 
 
 
@@ -675,68 +676,108 @@ def recv_sthg(sock):
 		return mess
 
 	else: 
-		print 'ERROR'
+		print 'ERROR_S :', msg
 
 
 
-def main_serveur(socket_1, ip1, login_1, socket_2, ip2, login_2) :
+def main_serveur(player1, player2) :
 	
-	#Creation de la partie
-	partie = Board(socket_1,socket_2)
+	try :
 
-	#send à chaque joueur joueur1/joueur2
-	socket_1.sendall("player1")
-	ok = False
-	while not ok:
-		data = socket_1.recv(1024)
-		if 'ok' in data:
-			ok = True
+		sock1 = player1.sock
+		sock2 = player2.sock
+		#Creation de la partie
+		partie = Board(sock1,sock2)
 
-	socket_2.sendall("player2")
-	ok = False
-	while not ok:
-		data = socket_2.recv(1024)
-		if 'ok' in data:
-			ok = True
+		#send à chaque joueur joueur1/joueur2
+		sock1.sendall("player1")
+		ok = False
+		while not ok:
+			data = sock1.recv(1024)
+			if 'ok' in data:
+				ok = True
 
-	# initial drawing
-	send_sthg(socket_1,["method","self.draw_grid_1(grid)","grid",partie.grid])
-	send_sthg(socket_2,["method","self.draw_grid_2(grid)","grid",partie.grid])
+		sock2.sendall("player2")
+		ok = False
+		while not ok:
+			data = sock2.recv(1024)
+			if 'ok' in data:
+				ok = True
 
-	print "Let's go !"
+		# initial drawing
+		send_sthg(sock1,["method","self.draw_grid_1(grid)","grid",partie.grid])
+		send_sthg(sock2,["method","self.draw_grid_2(grid)","grid",partie.grid])
 
-	while not partie.end:
+		print "Let's go !"
 
-		#print "One more loop"
-		partie.partie_en_cours()
+		while not partie.end:
 
-	# at the end of the match, we calculate the updated scores for both players
-	update_scores(login_1,login_2)
+			#print "One more loop"
+			partie.partie_en_cours()
+
+		# at the end of the match, we calculate the updated scores for both players
+		update_scores(partie.winner,player1,player2)
+
+		# asking the players if they want to play again
+		send_sthg(sock1,["play_again"])
+		again = recv_sthg(sock1)
+		print again,type(again),int(again[0])
+		if int(again[0]) == 0 :
+			player1.ready = False     # defaults to True
+		else :
+			queue.append(player1)
+
+		send_sthg(sock2,["play_again"])
+		again = recv_sthg(sock2)
+		print again
+		if int(again[0]) == 0 :
+			player2.ready = False
+		else :
+			queue.append(player2)
+
+		print "Quitting thread"
+
+		# unusable ???
+		# ending the connections (could be changed in order to allow a player to remain connected if he chooses to play once more)
+		#sock1.close()
+		#sock2.close()
+
+
+	except KeyboardInterrupt as e :
+
+		print e
+		sys.exit(-1)  # in case it's needed
+
 
 
 
 # -__-__-__-__-__-__-__-__-__-__-     Score Methods     -__-__-__-__-__-__-__-__-__-__- #
 
 
-def update_scores (login_1, login_2) :
+def update_scores (winner, player1, player2) :
 
-	update_Elo(partie.winner,login_1,login_2)
+	update_Elo(winner,player1.login,player2.login)
 	
 	# one more match has been played
-	all_scores[login_1][1] += 1
-	all_scores[login_2][1] += 1
+	all_scores[player1.login][1] += 1
+	all_scores[player2.login][1] += 1
+
+	# updating player objects
+	player1.score = all_scores[player1.login][0]
+	player2.score = all_scores[player2.login][0]
+	player1.nb_matches = all_scores[player1.login][1]
+	player2.nb_matches = all_scores[player2.login][1]
 
 
-
-def update_Elo (winner, player1, player2) :
+def update_Elo (winner, login1, login2) :
 
 	# current Elos
-	Elo1 = all_scores[player1][0]
-	Elo2 = all_scores[player2][0]
+	Elo1 = all_scores[login1][0]
+	Elo2 = all_scores[login2][0]
 	print "Current Elos", Elo1, Elo2
 	# current number of matches played
-	m1 = all_scores[player1][1]
-	m2 = all_scores[player2][1]
+	m1 = all_scores[login1][1]
+	m2 = all_scores[login2][1]
 
 	if m1 < 70 :
 		k1 = 80.0 / (1+0.1*m1)
@@ -760,8 +801,47 @@ def update_Elo (winner, player1, player2) :
 		Elo2 += k2 * (1 - prob)
 
 	# updating scores in dictionary
-	all_scores[player1][0] = Elo1
-	all_scores[player2][0] = Elo2
+	all_scores[login1][0] = Elo1
+	all_scores[login2][0] = Elo2
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+
+
+# -__-__-__-__-__-__-__-__-__-     Matchmaking Method      -__-__-__-__-__-__-__-__-__- #
+
+
+def trymatch (player1, player2) :
+
+	print abs(player1.score-player2.score)/player1.queue_timer
+	return abs(player1.score-player2.score)/player1.queue_timer
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+
+
+
+
+##############################################################################################################################################################
+##################################                                   class Online_Player                                    ##################################
+##############################################################################################################################################################
+
+class Online_Player :
+
+	def __init__ (self, sock, ip, login, pw, score, nb_matches) :
+
+		self.sock = sock                 # socket between client and server
+		self.ip = ip                     # ip adress
+		self.port = port				 # socket port
+		self.login = login               # account info : login
+		self.pw = pw                     # account info : password
+		self.score = score               # Elo score
+		self.nb_matches = nb_matches     # matches played
+		self.queue_timer = 1             # how many 30 seconds he has already waited for an opponent ? (1=0s,2=30s,3=1min,4=1min30s...)
+		self.queue_matchmaking = {}      # matchmaking scores to other players, with their login as key
+		self.ready = True                # becomes False if he chooses not to play again after his first match
 
 
 ##############################################################################################################################################################
@@ -792,8 +872,8 @@ temp.pop()
 
 all_accounts = {}
 for i in temp :
-	temp = i.split(";")
-	all_accounts[temp[0]] = temp[1]
+	temp2 = i.split(";")
+	all_accounts[temp2[0]] = temp2[1]
 print all_accounts
 
 temp = (scores.read()).split("\r")
@@ -801,18 +881,27 @@ temp.pop()
 
 all_scores = {}
 for i in temp :
-	temp = i.split(";")
-	all_scores[temp[0]] = [int(temp[1]),int(temp[2])]
+	temp2 = i.split(";")
+	all_scores[temp2[0]] = [float(temp2[1]),int(temp2[2])]
 print all_scores
 
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
+def handler(signum, frame):
+    print 'Signal handler called with signal', signum
+    raise RuntimeError("20 seconds have passed.")
+
+def quit_handler(signal, frame):
+	print 'Quitting.'
+	raise KeyboardInterrupt("Out !")
+
+signal.signal(signal.SIGINT, quit_handler)
 
 
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
-s.bind(("",4242))
+s.bind(("127.0.0.2",4242))
 s.listen(8)
 #serversocket.bind((socket.gethostname(), 80))
 
@@ -820,97 +909,260 @@ s.listen(8)
 
 shutdown = False
 
+guests_number = 0
 threads = []
+queue = []
+online_players = []
 
-# !! Pour l'instant, le matchmaking ne tient pas compte des scores !!
+
+######################################
+signal.signal(signal.SIGALRM, handler)
+signal.setitimer(signal.ITIMER_REAL,20,20)
+######################################
 
 try :
 
-	while shutdown == False :
+	while True :
 
-		print "Waiting for someone."
-		account_infos_1 = None
-		account_infos_2 = None
+		print queue, online_players
 
-		while not account_infos_1 :
-
-			(socket_1, (ip1,port)) = s.accept()
-			login,pw,new = socket_1.recv(4096).split(";")    # account informations for player 1
-			new = int(new)
-			if new :                                         # account creation (add in dictionary) if it is a new player
-				all_accounts[login] = pw
-				account_infos_1 = [login,pw]
-				all_scores[login][0] = 500                   # Elo initial rating
-				all_scores[login][1] = 0                     # number of matches played
-				socket_1.sendall("Ok")
-			elif login in all_accounts.keys() :              # if the player already has an account, we check if he entered the right password
-				if all_accounts[login] == pw :
-					account_infos_1 = [login,pw]
-					socket_1.sendall("Ok")
-
-				else :                                       # if that's not the case, we tell him to try again (and close the connection)
-					socket_1.sendall("Wrong")
-					socket_1.close()
-			else :                                           # if the player hit 'log in', but entered an unknown login (nickname), the connection is closed too
-				socket_1.sendall("Wrong")
-				socket_1.close()
+		account_infos = None
 
 
-		socket_1.sendall("Waiting for an opponent.")
-		print "Waiting for someone else."
+		while not account_infos :
 
-		while not account_infos_2 :                          # all the same for player 2
+			print "Waiting for someone."
 
-			(socket_2, (ip2,port)) = s.accept()
-			login,pw,new = socket_2.recv(4096).split(";")
-			new = int(new)
-			if new :
-				all_accounts[login] = pw
-				account_infos_2 = [login,pw]
-				all_scores[login][0] = 500
-				all_scores[login][1] = 0   
-				socket_2.sendall("Ok")
-			elif login in all_accounts.keys() :
-				if all_accounts[login] == pw :
-					account_infos_2 = [login,pw]
-					socket_2.sendall("Ok")
+			print account_infos, online_players
+
+			for player in online_players :
+
+				if player.ready == False :
+
+					#queue.remove(player)           # shouldn't happen, but just in case of
+					online_players.remove(player)
+					player.sock.close()
+					del player
+
+
+			try :
+
+				(sock, (ip,port)) = s.accept()
+
+			except RuntimeError as e :
+
+				print e
+
+				for wp in queue :
+
+					wp.queue_timer += 1
+
+				if len(queue) >= 2 :
+
+					for wp1 in queue :
+
+						for wp2 in queue :
+
+							if wp1 != wp2 :
+
+								wp1.queue_matchmaking[wp2.login] = trymatch(wp1,wp2)
+						
+						if min(wp1.queue_matchmaking.values()) < 50 :
+
+							opponent_login = min(wp1.queue_matchmaking,key=wp1.queue_matchmaking.get)
+
+							for wp2 in queue :
+								if wp2.login == opponent_login :
+									opponent = wp2
+									break
+
+							queue.remove(wp1)
+							queue.remove(opponent)
+							wp1.queue_timer = 1
+							opponent.queue_timer = 1
+							wp1.queue_matchmaking = {}
+							opponent.queue_matchmaking = {}							
+
+							# once both players have been found, we can effectively create the game
+							newthread = Thread(target=main_serveur,args=(wp1,opponent))
+							threads.append(newthread)
+							newthread.start()
+
+			else :
+
+				login,pw,new = sock.recv(4096).split(";")        # account informations for player 1
+				new = int(new)
+				if login == "guest" :
+					login = "".join(["guest",str(guests_number)])
+					guests_number += 1
+
+				if new :                                         # account creation (add in dictionary) if it is a new player
+					all_accounts[login] = pw
+					account_infos = [login,pw]
+					all_scores[login]= [500]                     # Elo initial rating
+					all_scores[login].append(0)                  # number of matches played
+					sock.sendall("Ok")
+
+				elif login not in all_accounts.keys() :          # if the player already has an account, we check if he entered the right password
+
+					sock.sendall("Wrong")
+					sock.close()
 
 				else :
-					socket_2.sendall("Wrong")
-					socket_2.close()
+					if all_accounts[login] != pw :
+						sock.sendall("Wrong")
+						sock.close()
+
+					else :
+						account_infos = [login,pw]
+						sock.sendall("Ok")
+
+				
+		newcomer = Online_Player(sock, ip, login, pw, all_scores[login][0], all_scores[login][1])
+		online_players.append(newcomer)
+
+		if queue != [] :
+
+			for waiting_player in queue :
+
+				newcomer.queue_matchmaking[waiting_player.login] = trymatch(waiting_player,newcomer)
+				#matchmaking_scores.append(trymatch(all_scores[login][0],all_scores[queue[wp][1]][0],0,queue[wp][2]))
+
+			if min(newcomer.queue_matchmaking.values()) < 50 :
+
+				print "opponent found"
+				opponent_login = min(newcomer.queue_matchmaking,key=newcomer.queue_matchmaking.get)
+
+				for wp2 in queue :
+					if wp2.login == opponent_login :
+						opponent = wp2
+						break
+
+				queue.remove(opponent)
+				opponent.queue_timer = 1
+				opponent.queue_matchmaking = {}
+
+				# once both players have been found, we can effectively create the game
+				newthread = Thread(target=main_serveur,args=(newcomer,opponent))
+				threads.append(newthread)
+				newthread.start()
+
 			else :
-				socket_2.sendall("Wrong")
-				socket_2.close()
 
-		socket_2.sendall("Waiting for an opponent.")
+				queue.append(newcomer)
 
-		# once both players have been found, we can effectively create the game
-		newthread = Thread(target=main_serveur,args=(socket_1,ip1,account_infos_1[0],socket_2,ip2,account_infos_2[0]))
-		threads.append(newthread)
-		newthread.start()
+		else :
+
+			queue.append(newcomer)
+
+		print queue
 
 
-# in case of an error or a volontary shutdown, we need to make sure not all data (account infos + scores) is lost, so we save it in 2 files :
+
+except KeyboardInterrupt as e :
+
+	print e
+
+	sys.exit(-1)  # in case it's needed
+
+
+
+# in case of an error or a voluntary shutdown, we need to make sure not all data (account infos + scores) is lost, so we save it in 2 files :
 # (accounts.txt, scores.txt)
 finally :
 	
-	for t in threads :
-		t.join()
+	# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  #
+	# TODO : attendre la fin de tous les threads (ou un certain temps si trop long ?), fermer tous les sockets clients, fermer le socket serveur
+	# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  #
+	#for t in threads :
+	#	t.join()
+
+
 
 	accounts = open("accounts.txt","w")
 	for i in all_accounts.keys() :
-		accounts.write(";".join([i,all_accounts[i]]))
-		accounts.write("\r")
+
+		if 'guest' not in i :
+			accounts.write(";".join([i,all_accounts[i]]))
+			accounts.write("\r")
 
 	scores = open("scores.txt","w")
 	for i in all_scores.keys() :
 
-		to_write = i
-		for j in xrange(0,2,1) :
-			to_write += ";"+str(all_scores[i][j])
+		if 'guest' not in i :
+			to_write = i
+			for j in xrange(0,2,1) :
+				to_write += ";"+str(all_scores[i][j])
 
-		scores.write(to_write)
-		scores.write("\r")
+			scores.write(to_write)
+			scores.write("\r")
 
 
-	s.close()
+
+
+# try :
+
+# 	while shutdown == False :
+
+# 		print "Waiting for someone."
+# 		print threads
+
+# 		account_infos_1 = None
+# 		account_infos_2 = None
+
+# 		while not account_infos_1 :
+
+# 			(sock1, (ip1,port)) = s.accept()
+# 			login,pw,new = sock1.recv(4096).split(";")    # account informations for player 1
+# 			new = int(new)
+# 			if new :                                         # account creation (add in dictionary) if it is a new player
+# 				all_accounts[login] = pw
+# 				account_infos_1 = [login,pw]
+# 				all_scores[login][0] = 500                   # Elo initial rating
+# 				all_scores[login][1] = 0                     # number of matches played
+# 				sock1.sendall("Ok")
+# 			elif login in all_accounts.keys() :              # if the player already has an account, we check if he entered the right password
+# 				if all_accounts[login] == pw :
+# 					account_infos_1 = [login,pw]
+# 					sock1.sendall("Ok")
+
+# 				else :                                       # if that's not the case, we tell him to try again (and close the connection)
+# 					sock1.sendall("Wrong")
+# 					sock1.close()
+# 			else :                                           # if the player hit 'log in', but entered an unknown login (nickname), the connection is closed too
+# 				sock1.sendall("Wrong")
+# 				sock1.close()
+
+
+# 		sock1.sendall("Waiting for an opponent.")
+# 		print "Waiting for someone else."
+
+# 		while not account_infos_2 :                          # all the same for player 2
+
+# 			(sock2, (ip2,port)) = s.accept()
+# 			login,pw,new = sock2.recv(4096).split(";")
+# 			new = int(new)
+# 			if new :
+# 				all_accounts[login] = pw
+# 				account_infos_2 = [login,pw]
+# 				all_scores[login][0] = 500
+# 				all_scores[login][1] = 0   
+# 				sock2.sendall("Ok")
+# 			elif login in all_accounts.keys() :
+# 				if all_accounts[login] == pw :
+# 					account_infos_2 = [login,pw]
+# 					sock2.sendall("Ok")
+
+# 				else :
+# 					sock2.sendall("Wrong")
+# 					sock2.close()
+# 			else :
+# 				sock2.sendall("Wrong")
+# 				sock2.close()
+
+# 		sock2.sendall("Waiting for an opponent.")
+
+# 		# once both players have been found, we can effectively create the game
+# 		newthread = Thread(target=main_serveur,args=(sock1,ip1,account_infos_1[0],sock2,ip2,account_infos_2[0]))
+# 		threads.append(newthread)
+# 		newthread.start()
