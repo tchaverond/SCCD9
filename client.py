@@ -479,7 +479,7 @@ while not choice :
 		print "Error in Login !"
 		sys.exit(0)
 
-# when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), hence why not again = -1 ?
+# when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), I chose again = -1
 again = -1
 
 ##########
@@ -505,7 +505,7 @@ try :
 
 	# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
-
+		# as long as the person wants to play
 		while again != 0 :
 
 			opponent_found = False
@@ -518,18 +518,18 @@ try :
 					opponent_found = True
 					sC.sendall('ok')
 
-			print "blabla"
 			# once found, the game can starts
 			player_ID = data
 			# so we hide the temporary window
 			mainwindow.withdraw()
-			#mainwindow.destroy()
+
 			# and create the real game frame
 			# this method returns 1 if the player has chosen to play one more game, and 0 if he decides to leave	
 			again = main_client(player_ID, sC)
 
 			# bringing back the menu window
-			mainwindow.deiconify()		
+			mainwindow.deiconify()	
+				
 
 except KeyboardInterrupt as e :
 
