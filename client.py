@@ -3,7 +3,6 @@
 from Tkinter import*
 import tkMessageBox
 
-import signal
 import time
 import sys
 import os
@@ -393,7 +392,6 @@ def send_sthg(sock, msg):
 
 	final_msg += "$"
 
-	#signal.alarm(30)
 	
 	try:
 		sock.sendall(final_msg)
@@ -410,13 +408,10 @@ def send_sthg(sock, msg):
 		print e
 		raise IOError("Disconnected from server.")
 
-	#signal.alarm(0)
-
 
 
 def recv_sthg(sock):
 
-	#signal.alarm(30)
 
 	try:
 
@@ -443,7 +438,6 @@ def recv_sthg(sock):
 		print e
 		raise IOError("Disconnected from server.")
 	
-	#signal.alarm(0)
 
 
 
@@ -492,12 +486,6 @@ def main_client(player_ID, sC):
 
 ##############################################################################################################################################################
 ##############################################################################################################################################################
-
-# -__-__-__-__-__-__-     Signals    -__-__-__-__-__-__- #
-
-signal.signal(signal.SIGALRM,handler_com)
-
-
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
