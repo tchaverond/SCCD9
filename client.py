@@ -413,11 +413,22 @@ def send_sthg(sock, msg):
 def recv_sthg(sock):
 
 
-	try:
+	try :
 
 		msg = sock.recv(4096)
 
 		mess=msg.split(";")
+
+		if "shutdown" in msg :
+
+			print "Server will be unavailable in a few minutes. If you're currently in a game, please end it as soon as possible."
+			mess.remove("shutdown")
+
+			if mess == [] :
+
+				msg = sock.recv(4096)
+				mess = msg.split(";")
+
 		if mess[0] == "$" and mess[-1] == "$":
 			mess.pop(0)
 			mess.pop(-1)
@@ -427,10 +438,6 @@ def recv_sthg(sock):
 		elif 'Check.' in msg :
 
 			raise RuntimeError("Game crashed at server.")
-
-		elif 'unavailable' in msg :
-
-			print msg			
 
 		else :
 
@@ -571,7 +578,7 @@ try :
 					sC.sendall('$ok$')
 
 			# once found, the game can starts
-			player_ID = data
+			player_ID = data.split(";")[1]
 			# so we hide the menu window
 			mainwindow.withdraw()
 

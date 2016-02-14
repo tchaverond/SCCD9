@@ -5,6 +5,7 @@ import time
 import sys
 import os
 import re
+import errno
 from socket import*
 from threading import*
 
@@ -1001,7 +1002,8 @@ print all_scores
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
-def handler(signum, frame):
+def handler(signum, frame) :
+
     print 'Signal handler called with signal', signum
 
     if signum == 14 :
@@ -1225,11 +1227,11 @@ except KeyboardInterrupt as e :
 # (accounts.txt, scores.txt)
 finally :
 	
+	signal.alarm(10)
+
 	for player in online_players :
 
-		player.sock.sendall("Server will be unavailable in a few minutes. If you're currently in a game, please end it as soon as possible.")
-
-	signal.alarm(10)
+		player.sock.sendall("shutdown")
 	
 	try :
 
