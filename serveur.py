@@ -700,8 +700,9 @@ def recv_sthg(sock):
 			return mess
 
 		else:
-			print 'ERROR_S :', msg
+			print 'Caught an unconsistent message :', msg
 			sock.sendall('$errmsg$')
+			raise IOError(str(sock))
 
 	except error as e :
 

@@ -430,7 +430,7 @@ def recv_sthg(sock):
 
 		else :
 
-			print 'ERROR_C :', msg
+			print 'Caught an unconsistent message :', msg
 			sock.sendall('$errmsg$')
 
 	except timeout as e :
