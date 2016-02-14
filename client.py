@@ -428,6 +428,10 @@ def recv_sthg(sock):
 
 			raise RuntimeError("Game crashed at server.")
 
+		elif 'unavailable' in msg :
+
+			print msg			
+
 		else :
 
 			print 'Caught an unconsistent message :', msg
@@ -532,7 +536,7 @@ again = -1
 ##########
 try :
 
-	setdefaulttimeout(60.0)
+	setdefaulttimeout(40.0)
 	# connecting to the server
 	sC = socket(AF_INET,SOCK_STREAM)
 	sC.connect(("127.0.0.2",4242))

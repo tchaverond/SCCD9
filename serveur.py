@@ -574,19 +574,19 @@ class Board :
 
 		i = 0
 		self.end = True
-		# while i < len(self.grid) and self.end == True :
-		# 	if 1 in self.grid[i] :
-		# 		self.end = False
-		# 	i = i+1
+		while i < len(self.grid) and self.end == True :
+			if 1 in self.grid[i] :
+				self.end = False
+			i = i+1
 
-		# if self.end == False :
+		if self.end == False :
 
-		# 	i = 0
-		# 	self.end = True
-		# 	while i < len(self.grid) and self.end == True :
-		# 		if 2 in self.grid[i] :
-		# 			self.end = False
-		# 		i = i+1
+			i = 0
+			self.end = True
+			while i < len(self.grid) and self.end == True :
+				if 2 in self.grid[i] :
+					self.end = False
+				i = i+1
 
 
 
@@ -618,11 +618,13 @@ class Board :
 				self.winner = 3-self.player	
 
 		except IOError as e :
-			print e, "blabla"
+			print e
+			print "A client crashed."
 			#normalement e correspond a la socket qui a plante, on veut le numero du joueur associe
 			#normalement une socket transformee en str ne sert a rien mais on veut juste savoir a qui elle appartient
+			# !!! doesn't work !!!
 			player_out=1*(str(self.sockets[1])==e)+2*(str(self.sockets[2])==e)
-			print str(player_out)
+			print "It's the player", str(player_out)
 			raise IOError(str(player_out))
 
 
@@ -733,7 +735,7 @@ def main_serveur(player1, player2) :
 
 			#send à chaque joueur joueur1/joueur2
 			send_sthg(sock1,["player1"])
-			send_sthg(sock2,["player1"])
+			send_sthg(sock2,["player2"])
 
 			# initial drawing
 			send_sthg(sock1,["method","self.draw_grid_1(grid)","grid",partie.grid])
@@ -1001,7 +1003,12 @@ print all_scores
 
 def handler(signum, frame):
     print 'Signal handler called with signal', signum
-    raise RuntimeError("20 seconds have passed.")
+
+    if signum == 14 :
+    	raise RuntimeError("20 seconds have passed.")
+    else :
+    	raise RuntimeError("Some threads are taking too long to stop. Enabling forced shutdown.")
+
 
 def quit_handler(signal, frame):
 	print 'Quitting.'
@@ -1208,7 +1215,7 @@ try :
 
 except KeyboardInterrupt as e :
 
-	print e
+	print "You called for an emergency shutdown."
 
 	sys.exit(-1)  # in case it's needed
 
@@ -1218,12 +1225,35 @@ except KeyboardInterrupt as e :
 # (accounts.txt, scores.txt)
 finally :
 	
-	# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  #
-	# TODO : attendre la fin de tous les threads (ou un certain temps si trop long ?), fermer tous les sockets clients, fermer le socket serveur
-	# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  #
-	#for t in threads :
-	#	t.join()
+	for player in online_players :
 
+		player.sock.sendall("Server will be unavailable in a few minutes. If you're currently in a game, please end it as soon as possible.")
+
+	signal.alarm(10)
+	
+	try :
+
+		for t in threads :
+			t.join()
+
+	except RuntimeError as e :
+
+		print e
+
+	signal.alarm(0)
+
+
+	for player in online_players :
+
+		online_players.remove(player)
+		# the corresponding socket is closed
+		player.sock.shutdown(SHUT_WR)
+		player.sock.close()
+		# and the player object is deleted
+		del player
+
+	s.shutdown(SHUT_RDWR)
+	s.close()
 
 
 	accounts = open("accounts.txt","w")
