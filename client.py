@@ -3,11 +3,11 @@
 from Tkinter import*
 import tkMessageBox
 
+import signal
 import time
 import sys
 import os
 import re
-#import inspect
 from socket import*
 
 import tkDialog
@@ -274,13 +274,20 @@ class Layout:
 
 	def run (self) :
 
-		while not self.end_game :
+		try :
+			while not self.end_game :
 
-			#print "Waiting for an order."
-			message = recv_sthg(self.serv_socket)
-			self.handle(message)
-			self.fenetre.update_idletasks()
-			self.fenetre.update()
+				#print "Waiting for an order."
+				message = recv_sthg(self.serv_socket)
+				self.handle(message)
+				self.fenetre.update_idletasks()
+				self.fenetre.update()
+
+		except IOError as e :
+			raise
+
+		except RuntimeError as e :
+			raise
 
 
 	def handle (self, message) :
@@ -369,6 +376,12 @@ def unstring_coords (coords) :
 	return rebuilt_coords
 
 
+def handler_com(signum, frame):
+
+    print 'Signal handler called with signal', signum
+    raise RuntimeError("Connection expired.")
+
+
 
 def send_sthg(sock, msg):
 
@@ -380,63 +393,111 @@ def send_sthg(sock, msg):
 
 	final_msg += "$"
 
-	sock.sendall(final_msg)
-	ok=False
-	while not ok:
-		data=sock.recv(1024)
-		if 'ok' in data:
-			ok=True
+	#signal.alarm(30)
+	
+	try:
+		sock.sendall(final_msg)
+		ok=False
+		while not ok:
+			data=sock.recv(1024)
+			if 'ok' in data:
+				ok=True
+			else:
+				sock.sendall(final_msg)
+
+	except timeout as e :
+
+		print e
+		raise IOError("Disconnected from server.")
+
+	#signal.alarm(0)
+
 
 
 def recv_sthg(sock):
 
-	msg = sock.recv(4096)
-	mess=msg.split(";")
-	if mess[0] == "$" and mess[-1] == "$":
-		mess.pop(0)
-		mess.pop(-1)
-		sock.sendall('$ok$')
-		return mess
+	#signal.alarm(30)
 
-	else: 
-		print 'ERROR_C'
+	try:
 
+		msg = sock.recv(4096)
+
+		mess=msg.split(";")
+		if mess[0] == "$" and mess[-1] == "$":
+			mess.pop(0)
+			mess.pop(-1)
+			sock.sendall('$ok$')
+			return mess
+
+		elif 'Check.' in msg :
+
+			raise RuntimeError("Game crashed at server.")
+
+		else :
+
+			print 'ERROR_C :', msg
+			sock.sendall('$errmsg$')
+
+	except timeout as e :
+
+		print e
+		raise IOError("Disconnected from server.")
+	
+	#signal.alarm(0)
 
 
 
 
 def main_client(player_ID, sC):
 
-	Checkers = Layout(player_ID, sC)
-	# print Checkers.player_ID
+	try :
 
-	Checkers.run()
+		Checkers = Layout(player_ID, sC)
+		# print Checkers.player_ID
 
-	# once the game has ended, the player is asked (through a minimalistic popup window (from the package 'tkMessageBox')) to choose to play again or leave
-	if tkMessageBox.askyesno("SCCD9", "Play again ?") :
+		Checkers.run()
+
+		# once the game has ended, the player is asked (through a minimalistic popup window (from the package 'tkMessageBox')) to choose to play again or leave
+		if tkMessageBox.askyesno("SCCD9", "Play again ?") :
+			Checkers.fenetre.destroy()
+			answer = 1
+
+		else :
+			Checkers.fenetre.destroy()
+			answer = 0
+
+		# we forward his choice to the server
+
+		data = [""]
+		while data[0] != "play_again" :
+			data = recv_sthg(sC)
+
+		send_sthg(sC,[str(answer)])
+		print "answer sent"			
+
+		return answer
+
+
+	except IOError as e :
+
+		raise
+
+	except RuntimeError as e :
+
+		print e
 		Checkers.fenetre.destroy()
-		answer = 1
-
-	else :
-		Checkers.fenetre.destroy()
-		answer = 0
-
-	# we forward his choice to the server
-
-	data = [""]
-	while data[0] != "play_again" :
-		data = recv_sthg(sC)
-
-	send_sthg(sC,[str(answer)])
-	print "answer sent"			
-
-	return answer
-
+		return 1
 
 
 
 ##############################################################################################################################################################
 ##############################################################################################################################################################
+
+# -__-__-__-__-__-__-     Signals    -__-__-__-__-__-__- #
+
+signal.signal(signal.SIGALRM,handler_com)
+
+
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
@@ -483,6 +544,7 @@ again = -1
 ##########
 try :
 
+	setdefaulttimeout(60.0)
 	# connecting to the server
 	sC = socket(AF_INET,SOCK_STREAM)
 	sC.connect(("127.0.0.2",4242))
@@ -494,6 +556,7 @@ try :
 	# if those infos are wrong, the program ends, and the player has to enter his account infos again
 	if answer == "Wrong" :
 		tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
+		sC.shutdown(SHUT_WR)
 		sC.close()
 		sys.exit(0)
 
@@ -513,11 +576,11 @@ try :
 				data = sC.recv(1024)
 				if "player" in data :
 					opponent_found = True
-					sC.sendall('ok')
+					sC.sendall('$ok$')
 
 			# once found, the game can starts
 			player_ID = data
-			# so we hide the temporary window
+			# so we hide the menu window
 			mainwindow.withdraw()
 
 			# and create the real game frame
@@ -528,11 +591,25 @@ try :
 			mainwindow.deiconify()	
 
 
+except IOError as e :
+
+	print e
+	sC.shutdown(SHUT_WR)
+	sC.close()
+	sys.exit(-1)
+
+
 except KeyboardInterrupt as e :
 
 	print "Argh!"
-	# to be done
+	sC.shutdown(SHUT_WR)
+	sC.close()
+	sys.exit(-1)
 
-sC.close()
+
+else :
+
+	sC.shutdown(SHUT_WR)
+	sC.close()
 
 print "See you !"

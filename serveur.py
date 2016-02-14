@@ -574,46 +574,56 @@ class Board :
 
 		i = 0
 		self.end = True
-		while i < len(self.grid) and self.end == True :
-			if 1 in self.grid[i] :
-				self.end = False
-			i = i+1
+		# while i < len(self.grid) and self.end == True :
+		# 	if 1 in self.grid[i] :
+		# 		self.end = False
+		# 	i = i+1
 
-		if self.end == False :
+		# if self.end == False :
 
-			i = 0
-			self.end = True
-			while i < len(self.grid) and self.end == True :
-				if 2 in self.grid[i] :
-					self.end = False
-				i = i+1
+		# 	i = 0
+		# 	self.end = True
+		# 	while i < len(self.grid) and self.end == True :
+		# 		if 2 in self.grid[i] :
+		# 			self.end = False
+		# 		i = i+1
 
 
 
 	def partie_en_cours(self) :
 
-		#print "Telling whose it is to play"
-		send_sthg(self.sockets[self.player],["method","self.play()"])
-		#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
+		try :
 
-		#print "Waiting for coords"
-		coords = self.handle(recv_sthg(self.sockets[self.player]))
-		#recv identifiant; x; y   -> done
+			#print "Telling whose it is to play"
+			send_sthg(self.sockets[self.player],["method","self.play()"])
+			#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
 
-		#print "Entering left click", coords[0],coords[1]
-		self.left_click(coords[0], coords[1])
-		#print "Exiting left click", coords[0],coords[1]
+			#print "Waiting for coords"
+			coords = self.handle(recv_sthg(self.sockets[self.player]))
+			#recv identifiant; x; y   -> done
 
-		#On vérifie si la partie est terminée
-		self.check_end()
-		#print "Checked for end", self.end
+			#print "Entering left click", coords[0],coords[1]
+			self.left_click(coords[0], coords[1])
+			#print "Exiting left click", coords[0],coords[1]
 
-		if self.end == True :
+			#On vérifie si la partie est terminée
+			self.check_end()
+			#print "Checked for end", self.end
 
-			send_sthg(self.sockets[3-self.player],["method","self.win()"])
-			send_sthg(self.sockets[self.player],["method","self.lose()"])
+			if self.end == True :
 
-			self.winner = 3-self.player	
+				send_sthg(self.sockets[3-self.player],["method","self.win()"])
+				send_sthg(self.sockets[self.player],["method","self.lose()"])
+
+				self.winner = 3-self.player	
+
+		except IOError as e :
+			print e, "blabla"
+			#normalement e correspond a la socket qui a plante, on veut le numero du joueur associe
+			#normalement une socket transformee en str ne sert a rien mais on veut juste savoir a qui elle appartient
+			player_out=1*(str(self.sockets[1])==e)+2*(str(self.sockets[2])==e)
+			print str(player_out)
+			raise IOError(str(player_out))
 
 
 
@@ -646,6 +656,7 @@ def unstring_coords (coords) :
 	return rebuilt_coords
 
 
+
 def send_sthg(sock, msg):
 
 	final_msg = "$;"
@@ -656,89 +667,191 @@ def send_sthg(sock, msg):
 
 	final_msg += "$"
 
-	sock.sendall(final_msg)
-	ok=False
-	while not ok:
-		data=sock.recv(1024)
-		if 'ok' in data:
-			ok=True
+
+	try:
+		sock.sendall(final_msg)
+		ok=False
+		while not ok:
+			data=sock.recv(1024)
+			if 'ok' in data:
+				ok=True
+			else:
+				sock.sendall(final_msg)
+
+	except timeout as e :
+
+		print e
+		raise IOError(str(sock))
+	
+
 
 
 def recv_sthg(sock):
 
-	msg = sock.recv(4096)
+	try :
 
-	mess=msg.split(";")
-	if mess[0] == "$" and mess[-1] == "$":
-		mess.pop(0)
-		mess.pop(-1)
-		sock.sendall('$ok$')
-		return mess
+		msg = sock.recv(4096)
 
-	else: 
-		print 'ERROR_S :', msg
+		mess=msg.split(";")
+		if mess[0] == "$" and mess[-1] == "$":
+			mess.pop(0)
+			mess.pop(-1)
+			sock.sendall('$ok$')
+			return mess
+
+		else:
+			print 'ERROR_S :', msg
+			sock.sendall('$errmsg$')
+
+	except error as e :
+
+		if e.errno==errno.ECONNRESET :
+			print (str(sock))
+			raise IOError(str(sock))
+
+	except timeout as e :
+
+		print e
+		raise IOError(str(sock))
+	
+
 
 
 
 def main_serveur(player1, player2) :
 	
+
 	try :
 
-		sock1 = player1.sock
-		sock2 = player2.sock
-		#Creation de la partie
-		partie = Board(sock1,sock2)
+		try :
 
-		#send à chaque joueur joueur1/joueur2
-		sock1.sendall("player1")
-		ok = False
-		while not ok:
-			data = sock1.recv(1024)
-			if 'ok' in data:
-				ok = True
+			sock1 = player1.sock
+			sock2 = player2.sock
+			#Creation de la partie
+			partie = Board(sock1,sock2)
 
-		sock2.sendall("player2")
-		ok = False
-		while not ok:
-			data = sock2.recv(1024)
-			if 'ok' in data:
-				ok = True
+			#send à chaque joueur joueur1/joueur2
+			send_sthg(sock1,["player1"])
+			send_sthg(sock2,["player1"])
 
-		# initial drawing
-		send_sthg(sock1,["method","self.draw_grid_1(grid)","grid",partie.grid])
-		send_sthg(sock2,["method","self.draw_grid_2(grid)","grid",partie.grid])
+			# initial drawing
+			send_sthg(sock1,["method","self.draw_grid_1(grid)","grid",partie.grid])
+			send_sthg(sock2,["method","self.draw_grid_2(grid)","grid",partie.grid])
 
-		print "Let's go !"
+			print "Let's go !"
 
-		while not partie.end:
+			while not partie.end:
 
-			#print "One more loop"
-			partie.partie_en_cours()
+				#print "One more loop"
+				partie.partie_en_cours()
 
-		# at the end of the match, we calculate the updated scores for both players
-		update_scores(partie.winner,player1,player2)
+			# at the end of the match, we calculate the updated scores for both players
+			update_scores(partie.winner,player1,player2)
 
-		# asking the players if they want to play again
-		send_sthg(sock1,["play_again"])
-		again = recv_sthg(sock1)
+			# asking the players if they want to play again
+			send_sthg(sock1,["play_again"])
+			again = recv_sthg(sock1)
 
-		# if they don't, we remember it, in order to delete the corresponding object after
-		if int(again[0]) == 0 :
-			player1.ready = False      # defaults to True
+			# if they don't, we remember it, in order to delete the corresponding object after
+			if again != None :
 
-		# if they want to play again, we add them to the queue
+				if int(again[0]) == 0 :
+					player1.ready = False      # defaults to True
+
+				# if they want to play again, we add them to the queue
+				else :
+					queue.append(player1)
+
+			else :
+
+				print "Couldn't get the answer from player1, trying to continue."
+
+
+			send_sthg(sock2,["play_again"])
+			again = recv_sthg(sock2)
+
+			if again != None :
+
+				if int(again[0]) == 0 :
+					player2.ready = False
+				else :
+					queue.append(player2)
+
+				print "Game ended normally."
+
+			else :
+
+				print "Couldn't get the answer from player2, trying to continue."
+
+
+		except IOError as e:
+
+			if type(e) == str :
+			
+				survivor=3-int(e) #normalement e correspond au numéro de la socket qui a plante
+				update_scores(survivor,player1,player2)
+				send_sthg(self.sockets[survivor],["method","self.win()"])
+
+				# asking the survivor if he wants to play again
+				send_sthg(self.sockets[survivor],["play_again"])
+				again = recv_sthg(self.sockets[survivor])
+
+				# if he doesn't, we remember it, in order to delete the corresponding object after
+				if int(again[0]) == 0 :
+					if survivor==1:
+						player1.ready = False      # defaults to True
+					else:
+						player2.ready = False
+
+				# if he wants to play again, we add him to the queue
+				else :
+					if survivor==1:
+						queue.append(player1)
+					else:
+						queue.append(player2)
+
+				print "Game ended with a disconnection :'("
+
+
+
+	except StandardError as e :
+
+		if type(e) == TypeError :
+
+			print "Something went wrong with the sockets, caught 'Type Error', as follows :"
+			print e
+
 		else :
+
+			print "Something went wrong with the sockets, caught the following error :"
+			print e
+
+		print "Game ended poorly."
+
+		try :
+			sock1.sendall("Check.")
+
+		except :
+			player1.ready = False
+
+		try :
+			sock2.sendall("Check.")
+
+		except :
+			player2.ready = False
+
+
+		if player1.ready and not player2.ready :
+			update_scores(player1,player1,player2)
+
+		elif player2.ready and not player1.ready :
+			update_scores(player1,player1,player2)
+
+		if player1.ready :
 			queue.append(player1)
 
-
-		send_sthg(sock2,["play_again"])
-		again = recv_sthg(sock2)
-		if int(again[0]) == 0 :
-			player2.ready = False
-		else :
+		if player2.ready :
 			queue.append(player2)
-
-		print "Game ended"
 
 
 	except KeyboardInterrupt as e :
@@ -896,6 +1009,7 @@ def quit_handler(signal, frame):
 signal.signal(signal.SIGINT, quit_handler)
 
 
+setdefaulttimeout(30.0)
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("127.0.0.2",4242))
@@ -911,7 +1025,9 @@ queue = []
 online_players = []
 
 
-signal.signal(signal.SIGALRM, handler)
+# -__-__-__-__-__-__-     Signals    -__-__-__-__-__-__- #
+
+signal.signal(signal.SIGALRM,handler)
 signal.setitimer(signal.ITIMER_REAL,20,20)
 
 
@@ -949,6 +1065,7 @@ try :
 
 					online_players.remove(player)
 					# the corresponding socket is closed
+					player.sock.shutdown(SHUT_WR)
 					player.sock.close()
 					# and the player object is deleted
 					del player
@@ -1028,11 +1145,13 @@ try :
 				elif login not in all_accounts.keys() :           # if the player says he already has an account, we check if he entered the right login
 
 					sock.sendall("Wrong")
+					sock.shutdown(SHUT_WR)
 					sock.close()
 
 				else :
 					if all_accounts[login] != pw :                # and the right password
 						sock.sendall("Wrong")
+						sock.shutdown(SHUT_WR)
 						sock.close()
 
 					else :
