@@ -156,6 +156,7 @@ class Layout:
 		while not self.click :
 
 			t = threading.Timer(30.0,self.ping)
+			t.daemon = True
 			t.start()
 			#print "started A",self.ticktock
 
