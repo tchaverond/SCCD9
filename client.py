@@ -67,7 +67,7 @@ class Layout:
 	def __init__(self, player_ID, serv_socket) :
 
 		self.fenetre = Tk()
-		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (online)")
+		self.fenetre.title("Deluxe Checkers 9000 (Beta)")
 		
 
 		self.h = self.fenetre.winfo_screenheight() * 0.5
@@ -649,7 +649,7 @@ def lets_go() :
 
 
 mainwindow = Tk()
-mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
+mainwindow.title("Deluxe Checkers 9000 (Beta)")
 # creating the main window, and adapting its size to the user's screen
 # this is a temporary one which gets destroyed as soon as the game starts
 # it is only here for popup windows to work properly, and maybe for design purposes (what about adding a nice image/drawing as background ?)
