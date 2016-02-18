@@ -70,8 +70,8 @@ class Layout:
 		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (online)")
 		
 
-		self.h = self.fenetre.winfo_screenheight() * 0.5
-		self.w = min(self.fenetre.winfo_screenwidth() * 0.5, 1.5*self.h)
+		self.h = self.fenetre.winfo_screenheight() * 0.8
+		self.w = min(self.fenetre.winfo_screenwidth() * 0.8, 1.5*self.h)
 
 
 		self.click = False 					# only used to exit play() method upon click
@@ -155,7 +155,7 @@ class Layout:
 
 		while not self.click :
 
-			t = threading.Timer(10.0,self.ping)
+			t = threading.Timer(30.0,self.ping)
 			t.start()
 			#print "started A",self.ticktock
 
@@ -586,7 +586,7 @@ again = -1
 ##########
 try :
 
-	setdefaulttimeout(40.0)
+	setdefaulttimeout(45.0)
 	# connecting to the server
 	sC = socket(AF_INET,SOCK_STREAM)
 	sC.connect(("127.0.0.2",4242))

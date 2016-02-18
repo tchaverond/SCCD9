@@ -653,7 +653,7 @@ class Board :
 			print "I have an issue in handle !"
 			#pass
 			# TODO (?)
-			
+
 		return None
 
 
@@ -1032,7 +1032,7 @@ def quit_handler(signal, frame):
 signal.signal(signal.SIGINT, quit_handler)
 
 
-setdefaulttimeout(30.0)
+setdefaulttimeout(40.0)
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("127.0.0.2",4242))
