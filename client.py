@@ -533,15 +533,6 @@ def main_client(player_ID, sC):
 ##############################################################################################################################################################
 
 
-# def ping (signum, frame) :
-
-# 	print 'Pinging'
-# 	send_sthg(sC,["ping"])
-
-
-#signal.signal(signal.SIGALRM,ping)
-
-
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
@@ -552,7 +543,13 @@ mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
 # creating the main window, and adapting its size to the user's screen
 # this is a temporary one which gets destroyed as soon as the game starts
 # it is only here for popup windows to work properly, and maybe for design purposes (what about adding a nice image/drawing as background ?)
-sthg = PanedWindow(mainwindow, height=mainwindow.winfo_screenheight()*0.5, width=min(mainwindow.winfo_screenwidth()*0.5, 1.5*mainwindow.winfo_screenheight()*0.5))
+background_pic = PhotoImage(file="background.gif")
+sthg = PanedWindow(mainwindow, height=min(600,mainwindow.winfo_screenheight()*0.8), width=min(800,mainwindow.winfo_screenwidth()*0.8, 1.5*mainwindow.winfo_screenheight()*0.8))
+#print mainwindow.winfo_screenheight()*0.8,mainwindow.winfo_screenwidth()*0.8
+bg_label = Label(sthg, image=background_pic)
+bg_label.image = background_pic
+bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+sthg.add(bg_label)
 sthg.pack()
 
 # upon starting the game, the player can whether login to his account, create a new one, or play as guest (it means that his performance won't be remembered)
