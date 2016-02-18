@@ -600,7 +600,12 @@ class Board :
 			#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
 
 			#print "Waiting for coords"
-			coords = self.handle(recv_sthg(self.sockets[self.player]))
+			coords = None
+			while coords == None :
+				coords = self.handle(recv_sthg(self.sockets[self.player]))
+				#send_sthg(self.sockets[self.player],["ping"])
+				send_sthg(self.sockets[3-self.player],["ping"])
+			#print "zefrh"
 			#recv identifiant; x; y   -> done
 
 			#print "Entering left click", coords[0],coords[1]
@@ -636,13 +641,20 @@ class Board :
 		if "coords" in message :
 
 			coords = unstring_coords(message[1+message.index("coords")])
+			return coords
+
+		elif "ping" in message :
+
+			print "ping'd"
+			return None
 
 		else :
+
 			print "I have an issue in handle !"
 			#pass
 			# TODO (?)
-
-		return coords
+			
+		return None
 
 
 
@@ -694,6 +706,7 @@ def recv_sthg(sock):
 	try :
 
 		msg = sock.recv(4096)
+		#print msg
 
 		mess=msg.split(";")
 		if mess[0] == "$" and mess[-1] == "$":
@@ -1226,8 +1239,9 @@ except KeyboardInterrupt as e :
 # in case of an error or a voluntary shutdown, we need to make sure not all data (account infos + scores) is lost, so we save it in 2 files :
 # (accounts.txt, scores.txt)
 finally :
-	
-	signal.alarm(10)
+
+	signal.setitimer(signal.ITIMER_REAL,0)
+
 
 	for player in online_players :
 
@@ -1236,13 +1250,11 @@ finally :
 	try :
 
 		for t in threads :
-			t.join()
+			t.join(5)
 
 	except RuntimeError as e :
 
 		print e
-
-	signal.alarm(0)
 
 
 	for player in online_players :

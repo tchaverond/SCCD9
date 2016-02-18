@@ -3,6 +3,8 @@
 from Tkinter import*
 import tkMessageBox
 
+import signal
+import threading
 import time
 import sys
 import os
@@ -81,6 +83,7 @@ class Layout:
 		self.serv_socket = serv_socket		# server socket
 
 
+
 		self.plz_h = min(self.h,0.67*self.w)		# board height
 		self.plz_w = self.plz_h						# board width
 
@@ -133,16 +136,43 @@ class Layout:
 
 
 
+	def ping (self) :
+
+		print 'Pinging'
+		send_sthg(self.serv_socket,["ping"])
+
+		self.ticktock = 2
+		#print "finished",self.ticktock
+
+
+
 	def play (self) :
 
 		#print "Your turn!"
 		self.my_turn = True
 		self.click = False
-		while not self.click:
-			self.fenetre.update_idletasks()
-			self.fenetre.update()
+		self.ticktock = 1
+
+		while not self.click :
+
+			t = threading.Timer(10.0,self.ping)
+			t.start()
+			#print "started A",self.ticktock
+
+			while self.ticktock == 1 and not self.click :
+
+				self.fenetre.update_idletasks()
+				self.fenetre.update()
+
+			self.ticktock = 1
+
+
+		t.cancel()
+
 		#print "Out of play()"
 		self.my_turn = False
+
+
 
 
 	def win (self) :
@@ -307,9 +337,10 @@ class Layout:
 
 			eval(message[1+message.index("method")])
 
-		else :
+		elif "ping" in message :
 
-			pass
+			print "ping'd"
+			#pass
 			# TODO (?)
 
 			
@@ -416,6 +447,7 @@ def recv_sthg(sock):
 	try :
 
 		msg = sock.recv(4096)
+		#print msg
 
 		mess=msg.split(";")
 
@@ -478,7 +510,7 @@ def main_client(player_ID, sC):
 			data = recv_sthg(sC)
 
 		send_sthg(sC,[str(answer)])
-		print "answer sent"			
+		#print "answer sent"			
 
 		return answer
 
@@ -495,8 +527,19 @@ def main_client(player_ID, sC):
 
 
 
+
 ##############################################################################################################################################################
 ##############################################################################################################################################################
+
+
+# def ping (signum, frame) :
+
+# 	print 'Pinging'
+# 	send_sthg(sC,["ping"])
+
+
+#signal.signal(signal.SIGALRM,ping)
+
 
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 # -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
