@@ -81,7 +81,7 @@ class Board :
 		if self.highlight == [] :					# if no piece is already selected (selecting a piece to move or huffing an opponent's one)
 			self.select(x,y) 						# we call the "select" method in the game engine
 														
-		else :											# else the player wants to move a piece
+		else :										# else the player wants to move a piece
 			self.move(x,y)							# we call the "move" method
 
 		
@@ -575,19 +575,19 @@ class Board :
 
 		i = 0
 		self.end = True
-		# while i < len(self.grid) and self.end == True :
-		# 	if 1 in self.grid[i] :
-		# 		self.end = False
-		# 	i = i+1
+		while i < len(self.grid) and self.end == True :
+			if 1 in self.grid[i] :
+				self.end = False
+			i = i+1
 
-		# if self.end == False :
+		if self.end == False :
 
-		# 	i = 0
-		# 	self.end = True
-		# 	while i < len(self.grid) and self.end == True :
-		# 		if 2 in self.grid[i] :
-		# 			self.end = False
-		# 		i = i+1
+			i = 0
+			self.end = True
+			while i < len(self.grid) and self.end == True :
+				if 2 in self.grid[i] :
+					self.end = False
+				i = i+1
 
 
 
@@ -604,7 +604,6 @@ class Board :
 			while coords == None :
 				coords = self.handle(recv_sthg(self.sockets[self.player]))
 				#send_sthg(self.sockets[self.player],["ping"])
-				send_sthg(self.sockets[3-self.player],["ping"])
 			#print "zefrh"
 			#recv identifiant; x; y   -> done
 
@@ -646,6 +645,7 @@ class Board :
 		elif "ping" in message :
 
 			print "ping'd"
+			send_sthg(self.sockets[3-self.player],["ping"])
 			return None
 
 		else :
