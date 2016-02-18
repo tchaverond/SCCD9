@@ -70,8 +70,8 @@ class Layout:
 		self.fenetre.title("Super Crazy Checkers Deluxe 9000 (online)")
 		
 
-		self.h = self.fenetre.winfo_screenheight() * 0.8
-		self.w = min(self.fenetre.winfo_screenwidth() * 0.8, 1.5*self.h)
+		self.h = self.fenetre.winfo_screenheight() * 0.5
+		self.w = min(self.fenetre.winfo_screenwidth() * 0.5, 1.5*self.h)
 
 
 		self.click = False 					# only used to exit play() method upon click
@@ -589,7 +589,7 @@ try :
 	setdefaulttimeout(45.0)
 	# connecting to the server
 	sC = socket(AF_INET,SOCK_STREAM)
-	sC.connect(("127.0.0.2",4242))
+	sC.connect(("127.0.0.1",4242))
 
 	# and immediately sending account infos
 	sC.sendall(";".join(infos))
@@ -619,6 +619,8 @@ try :
 				if "player" in data :
 					opponent_found = True
 					sC.sendall('$ok$')
+				elif "ping" in data :
+					print "ping'd"
 
 			# once found, the game can starts
 			player_ID = data.split(";")[1]

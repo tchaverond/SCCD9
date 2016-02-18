@@ -1035,7 +1035,7 @@ signal.signal(signal.SIGINT, quit_handler)
 setdefaulttimeout(40.0)
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
-s.bind(("127.0.0.2",4242))
+s.bind(("127.0.0.1",4242))
 s.listen(8)
 #serversocket.bind((socket.gethostname(), 80))
 
@@ -1106,9 +1106,12 @@ try :
 			except RuntimeError as e :
 
 				print e
+				print queue
 
 				# each player still in queue have been waiting 20 seconds more since last time, so we increase their timers
 				for wp in queue :
+
+					wp.sock.sendall("ping")
 
 					wp.queue_timer += 1
 
@@ -1170,12 +1173,14 @@ try :
 					sock.sendall("Wrong")
 					sock.shutdown(SHUT_WR)
 					sock.close()
+					break
 
 				else :
 					if all_accounts[login] != pw :                # and the right password
 						sock.sendall("Wrong")
 						sock.shutdown(SHUT_WR)
 						sock.close()
+						break
 
 					else :
 						account_infos = [login,pw]
