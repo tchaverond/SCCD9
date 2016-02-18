@@ -541,6 +541,11 @@ def lets_go() :
 
 	choice = None
 
+	menu.pack_forget()
+	menu.remove(play_button)
+	menu.add(bg_label)
+	menu.pack()
+
 	while not choice :
 
 		temp = LogRegGuestWindow(mainwindow,"Welcome")
@@ -594,6 +599,12 @@ def lets_go() :
 			# as long as the person wants to play
 			while again != 0 :
 
+				menu.pack_forget()
+				menu.remove(bg_label)
+				menu.add(waiting_label)
+				menu.pack()
+				mainwindow.update()
+
 				opponent_found = False
 
 				# waiting until an opponent is found
@@ -640,6 +651,7 @@ def lets_go() :
 		sC.close()
 
 	print "See you !"
+	mainwindow.destroy()
 
 
 
@@ -661,11 +673,12 @@ menu = PanedWindow(mainwindow, height=min(600,mainwindow.winfo_screenheight()*0.
 bg_label = Label(menu,image=background_pic)
 bg_label.image = background_pic
 bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-#menu.add(bg_label)
+
+waiting_label = Label(menu,text="Looking for an opponent...",font="-weight bold -size 20",image=background_pic,compound=CENTER)
+#menu.add(waiting_label)
 
 play_button = Button(menu,text="Play !",command=lets_go,height=600,width=800,image=background_pic,compound=CENTER,font="-weight bold -size 20")
 menu.add(play_button)
 
 menu.pack()
 mainwindow.mainloop()
-

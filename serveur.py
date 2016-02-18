@@ -575,19 +575,19 @@ class Board :
 
 		i = 0
 		self.end = True
-		while i < len(self.grid) and self.end == True :
-			if 1 in self.grid[i] :
-				self.end = False
-			i = i+1
+		# while i < len(self.grid) and self.end == True :
+		# 	if 1 in self.grid[i] :
+		# 		self.end = False
+		# 	i = i+1
 
-		if self.end == False :
+		# if self.end == False :
 
-			i = 0
-			self.end = True
-			while i < len(self.grid) and self.end == True :
-				if 2 in self.grid[i] :
-					self.end = False
-				i = i+1
+		# 	i = 0
+		# 	self.end = True
+		# 	while i < len(self.grid) and self.end == True :
+		# 		if 2 in self.grid[i] :
+		# 			self.end = False
+		# 		i = i+1
 
 
 
@@ -1106,7 +1106,6 @@ try :
 			except RuntimeError as e :
 
 				print e
-				print queue
 
 				# each player still in queue have been waiting 20 seconds more since last time, so we increase their timers
 				for wp in queue :
