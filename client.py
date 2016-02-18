@@ -533,8 +533,118 @@ def main_client(player_ID, sC):
 ##############################################################################################################################################################
 
 
+
+# upon starting the game, the player can whether login to his account, create a new one, or play as guest (it means that his performance won't be remembered)
+# these options are displayed through (not so fancy) popup windows
+
+def lets_go() :
+
+	choice = None
+
+	while not choice :
+
+		temp = LogRegGuestWindow(mainwindow,"Welcome")
+		choice = temp.result
+
+		if temp.result == 1 :
+			temp2 = LoginWindow(mainwindow,"Login Window")
+			infos = temp2.result
+			infos.append(str(0))
+
+		elif temp.result == 2 :
+			temp2 = LoginWindow(mainwindow,"Register Window")
+			infos = temp2.result
+			infos.append(str(1))
+
+		elif temp.result == 3 :
+			infos = ['guest','None',str(1)]
+
+		else :
+			print "Error in Login !"
+			sys.exit(0)
+
+	# when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), I chose again = -1
+	again = -1
+
+	##########
+	try :
+
+		setdefaulttimeout(45.0)
+		# connecting to the server
+		sC = socket(AF_INET,SOCK_STREAM)
+		sC.connect(("127.0.0.1",4242))
+
+		# and immediately sending account infos
+		sC.sendall(";".join(infos))
+		answer = sC.recv(1024)
+
+		# if those infos are wrong, the program ends, and the player has to enter his account infos again
+		if answer == "Wrong" :
+			tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
+			sC.shutdown(SHUT_WR)
+			sC.close()
+			sys.exit(0)
+
+
+		# if they are right, we can go on
+		else :
+
+		# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+			# as long as the person wants to play
+			while again != 0 :
+
+				opponent_found = False
+
+				# waiting until an opponent is found
+				while opponent_found == False :
+					data = sC.recv(1024)
+					if "player" in data :
+						opponent_found = True
+						sC.sendall('$ok$')
+					elif "ping" in data :
+						print "ping'd"
+
+				# once found, the game can starts
+				player_ID = data.split(";")[1]
+				# so we hide the menu window
+				mainwindow.withdraw()
+
+				# and create the real game frame
+				# this method returns 1 if the player has chosen to play one more game, and 0 if he decides to leave	
+				again = main_client(player_ID, sC)
+
+				# bringing back the menu window
+				mainwindow.deiconify()	
+
+
+	except IOError as e :
+
+		print e
+		sC.shutdown(SHUT_WR)
+		sC.close()
+		sys.exit(-1)
+
+
+	except KeyboardInterrupt as e :
+
+		print "Argh!"
+		sC.shutdown(SHUT_WR)
+		sC.close()
+		sys.exit(-1)
+
+
+	else :
+
+		sC.shutdown(SHUT_WR)
+		sC.close()
+
+	print "See you !"
+
+
+
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
-# -__-__-__-__-                                               Login, Register, or play as Guest                                                -__-__-__-__- #
+# -__-__-__-__-__-__-__-                                                  Main Window                                                 -__-__-__-__-__-__-__- #
 # -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
 
@@ -543,115 +653,19 @@ mainwindow.title("Super Crazy Checkers Deluxe 9000 (online)")
 # creating the main window, and adapting its size to the user's screen
 # this is a temporary one which gets destroyed as soon as the game starts
 # it is only here for popup windows to work properly, and maybe for design purposes (what about adding a nice image/drawing as background ?)
+
 background_pic = PhotoImage(file="background.gif")
-sthg = PanedWindow(mainwindow, height=min(600,mainwindow.winfo_screenheight()*0.8), width=min(800,mainwindow.winfo_screenwidth()*0.8, 1.5*mainwindow.winfo_screenheight()*0.8))
-#print mainwindow.winfo_screenheight()*0.8,mainwindow.winfo_screenwidth()*0.8
-bg_label = Label(sthg, image=background_pic)
+
+menu = PanedWindow(mainwindow, height=min(600,mainwindow.winfo_screenheight()*0.8), width=min(800,mainwindow.winfo_screenwidth()*0.8, 1.5*mainwindow.winfo_screenheight()*0.8))
+
+bg_label = Label(menu,image=background_pic)
 bg_label.image = background_pic
 bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-sthg.add(bg_label)
-sthg.pack()
+#menu.add(bg_label)
 
-# upon starting the game, the player can whether login to his account, create a new one, or play as guest (it means that his performance won't be remembered)
-# these options are displayed through (not so fancy) popup windows
-choice = None
+play_button = Button(menu,text="Play !",command=lets_go,height=600,width=800,image=background_pic,compound=CENTER,font="-weight bold -size 20")
+menu.add(play_button)
 
-while not choice :
+menu.pack()
+mainwindow.mainloop()
 
-	temp = LogRegGuestWindow(mainwindow,"Welcome")
-	choice = temp.result
-
-	if temp.result == 1 :
-		temp2 = LoginWindow(mainwindow,"Login Window")
-		infos = temp2.result
-		infos.append(str(0))
-
-	elif temp.result == 2 :
-		temp2 = LoginWindow(mainwindow,"Register Window")
-		infos = temp2.result
-		infos.append(str(1))
-
-	elif temp.result == 3 :
-		infos = ['guest','None',str(1)]
-
-	else :
-		print "Error in Login !"
-		sys.exit(0)
-
-# when he joins the server, a player wants to play (so again != 0), but he hasn't played yet (so again != 1), I chose again = -1
-again = -1
-
-##########
-try :
-
-	setdefaulttimeout(45.0)
-	# connecting to the server
-	sC = socket(AF_INET,SOCK_STREAM)
-	sC.connect(("127.0.0.1",4242))
-
-	# and immediately sending account infos
-	sC.sendall(";".join(infos))
-	answer = sC.recv(1024)
-
-	# if those infos are wrong, the program ends, and the player has to enter his account infos again
-	if answer == "Wrong" :
-		tkMessageBox.showwarning("SCCD9", "Invalid login/password combination. Please try again.")
-		sC.shutdown(SHUT_WR)
-		sC.close()
-		sys.exit(0)
-
-
-	# if they are right, we can go on
-	else :
-
-	# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
-
-		# as long as the person wants to play
-		while again != 0 :
-
-			opponent_found = False
-
-			# waiting until an opponent is found
-			while opponent_found == False :
-				data = sC.recv(1024)
-				if "player" in data :
-					opponent_found = True
-					sC.sendall('$ok$')
-				elif "ping" in data :
-					print "ping'd"
-
-			# once found, the game can starts
-			player_ID = data.split(";")[1]
-			# so we hide the menu window
-			mainwindow.withdraw()
-
-			# and create the real game frame
-			# this method returns 1 if the player has chosen to play one more game, and 0 if he decides to leave	
-			again = main_client(player_ID, sC)
-
-			# bringing back the menu window
-			mainwindow.deiconify()	
-
-
-except IOError as e :
-
-	print e
-	sC.shutdown(SHUT_WR)
-	sC.close()
-	sys.exit(-1)
-
-
-except KeyboardInterrupt as e :
-
-	print "Argh!"
-	sC.shutdown(SHUT_WR)
-	sC.close()
-	sys.exit(-1)
-
-
-else :
-
-	sC.shutdown(SHUT_WR)
-	sC.close()
-
-print "See you !"
