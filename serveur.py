@@ -1217,6 +1217,7 @@ try :
 
 						# once both players have been found, we can effectively create the game
 						newthread = Thread(target=main_serveur,args=(newcomer,opponent))
+						newthread.daemon = True
 						threads.append(newthread)
 						newthread.start()
 
