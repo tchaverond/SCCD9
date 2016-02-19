@@ -94,14 +94,16 @@ class Layout:
 		self.x_gap = 0.1*self.cs 				# x gap between 2 squares
 		self.y_gap = 0.1*self.cs				# y gap between 2 squares
 		self.size = self.cs - self.x_gap 		# piece size
-		if self.player_ID == "player1" :
-			self.x_gap += 5 					# small corrections for player1
-			self.y_gap += 5
+
 
 		# parameters for the cemetery (place where we draw the pieces that have been taken)
 		self.cemetery_cs = 0.3*self.cs
 		self.cemetery_size = self.cemetery_cs - self.x_gap
 		self.cemetery_y_gap = 1.22*self.cemetery_cs
+
+		if self.player_ID == "player1" :
+			self.x_gap += 5 					# small corrections for player1
+			self.y_gap += 5
 
 
 

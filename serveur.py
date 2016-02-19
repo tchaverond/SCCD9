@@ -595,69 +595,67 @@ class Board :
 
 		try :
 
-			#print "Telling whose it is to play"
+			# Telling whose it is to play
 			send_sthg(self.sockets[self.player],["method","self.play()"])
-			#send méthode: loop (afficher "à ton tour de jouer") JOUEUR C   -> done
 
-			#print "Waiting for coords"
+			# Waiting for coordinates of player click on grid
 			coords = None
 			while coords == None :
 				coords = self.handle(recv_sthg(self.sockets[self.player]))
-				#send_sthg(self.sockets[self.player],["ping"])
-			#print "zefrh"
-			#recv identifiant; x; y   -> done
 
-			#print "Entering left click", coords[0],coords[1]
+			# Handling client click and updating game status accordingly
 			self.left_click(coords[0], coords[1])
-			#print "Exiting left click", coords[0],coords[1]
 
-			#On vérifie si la partie est terminée
+			# Checking if the game has ended (win of one player)
 			self.check_end()
-			#print "Checked for end", self.end
 
+			# if so
 			if self.end == True :
 
+				# the winner is not the current player (the current player is changed before checking for end conditions)
 				send_sthg(self.sockets[3-self.player],["method","self.win()"])
 				send_sthg(self.sockets[self.player],["method","self.lose()"])
 
+				# self.winner used to update scores
 				self.winner = 3-self.player	
 
+
+		# catching an exception while running the game (client disconnection)
 		except IOError :
 
 			print "A client crashed."
-			#normalement e correspond a la socket qui a plante, on veut le numero du joueur associe
-			#normalement une socket transformee en str ne sert a rien mais on veut juste savoir a qui elle appartient
-			# !!! doesn't work !!!
-			#player_out=1*(str(self.sockets[1])==e)+2*(str(self.sockets[2])==e)
 			print "It's the player", str(self.player)
+			# raising the exception, along with whose player has disconnected (it's necessarily the current player as we only talk to him)
 			raise IOError(str(self.player))
 
 
 
+	# handling any received message
 	def handle (self, message) :
 
-		#print "Got them !"
+		# the message whether contains the coordinates of the click on grid
 		if "coords" in message :
 
 			coords = unstring_coords(message[1+message.index("coords")])
 			return coords
 
+		# or a simple ping sent by the client to tell he's still there
 		elif "ping" in message :
 
-			print "ping'd"
+			#print "ping'd"
 			send_sthg(self.sockets[3-self.player],["ping"])
 			return None
 
+		# other cases should not happen, except if the message has been corrupted
 		else :
 
-			print "I have an issue in handle !"
-			#pass
-			# TODO (?)
+			print "I have an issue in handling this message ! Trying to continue."
 
 		return None
 
 
 
+# translating string received to list of coordinates
 def unstring_coords (coords) :
 
 	rebuilt_coords = []
@@ -672,12 +670,15 @@ def unstring_coords (coords) :
 
 
 
+# sending a message with the built-in protocol
 def send_sthg(sock, msg):
 
+	# adding two '$' as delimiters
 	final_msg = "$;"
 
 	for element in msg :
 
+		# each element is separated by ';'
 		final_msg += str(element) + ";"
 
 	final_msg += "$"
@@ -695,19 +696,16 @@ def send_sthg(sock, msg):
 
 	except timeout as e :
 
-		# print partie.sockets.index(sock)
-		# raise IOError(str(partie.sockets.index(sock)))
-		raise IOError("hum")
+		raise IOError
 	
 
 
-
+# receiving a message with the built-in protocol
 def recv_sthg(sock):
 
 	try :
 
 		msg = sock.recv(4096)
-		#print msg
 
 		mess=msg.split(";")
 		if mess[0] == "$" and mess[-1] == "$":
@@ -719,7 +717,6 @@ def recv_sthg(sock):
 		else:
 			print 'Caught an unconsistent message :', msg
 			print "Trying to continue."
-			#sock.sendall('$errmsg$')
 			raise IOError
 
 	except error as e :
@@ -746,22 +743,21 @@ def main_serveur(player1, player2) :
 
 			sock1 = player1.sock
 			sock2 = player2.sock
-			#Creation de la partie
+			# Initiating the board
 			partie = Board(sock1,sock2)
 
-			#send à chaque joueur joueur1/joueur2
+			# Sending to both players their IDs (player1 or player2)
 			send_sthg(sock1,["player1"])
 			send_sthg(sock2,["player2"])
 
-			# initial drawing
+			# Initial drawing of the grid
 			send_sthg(sock1,["method","self.draw_grid_1(grid)","grid",partie.grid])
 			send_sthg(sock2,["method","self.draw_grid_2(grid)","grid",partie.grid])
 
-			print "Let's go !"
 
+			# Main loop running until the game ends
 			while not partie.end:
 
-				#print "One more loop"
 				partie.partie_en_cours()
 
 			# at the end of the match, we calculate the updated scores for both players
@@ -803,12 +799,14 @@ def main_serveur(player1, player2) :
 				print "Couldn't get the answer from player2, trying to continue."
 
 
+		# if a player disconnects while the game is running, it's considered as a loss (and his opponent wins the game)
 		except IOError as e:
 
+			# if a player has been disconnected (it can also be a different exception we don't know about)
 			if len(str(e)) < 2 :
 
-				#  e : player that has been disconnected
-				survivor = 3-int(str(e))
+				# e : player that has been disconnected
+				survivor = 3-int(str(e))    # ID of the remaining player
 				send_sthg(partie.sockets[survivor],["method","self.win()"])
 
 				# asking the survivor if he wants to play again
@@ -831,13 +829,14 @@ def main_serveur(player1, player2) :
 
 				update_scores(survivor,player1,player2)
 
-				print "Game ended with a disconnection :'("
+				print "Game ended with a disconnection."
 
 
 
-
+	# if something unexpected happens during while the game is running, or in the 'except' method above (e.g. if both players have disconnected one after the other)
 	except StandardError as e :
 
+		# sort of recurrent error
 		if type(e) == TypeError :
 
 			print "Something went wrong with the sockets, caught 'Type Error', as follows :"
@@ -850,6 +849,7 @@ def main_serveur(player1, player2) :
 
 		print "Game ended poorly."
 
+		# checking which player(s) is/are still there (if there's any)
 		try :
 			sock1.sendall("Check.")
 
@@ -863,12 +863,15 @@ def main_serveur(player1, player2) :
 			player2.ready = False
 
 
+		# if only one player is remaning, it's declared as winner
 		if player1.ready and not player2.ready :
 			update_scores(player1,player1,player2)
 
 		elif player2.ready and not player1.ready :
 			update_scores(player1,player1,player2)
 
+		# each remaining player is added to the queue 
+		#(we assume they still want to play, we know it's not a disconnection from their side that has caused the exception here)
 		if player1.ready :
 			queue.append(player1)
 
@@ -876,10 +879,11 @@ def main_serveur(player1, player2) :
 			queue.append(player2)
 
 
+	# in case it's needed, but it shouldn't be
 	except KeyboardInterrupt as e :
 
-		print e
-		sys.exit(-1)  # in case it's needed
+		print "You tried an awkward interruption."
+		#sys.exit(-1)
 
 
 
@@ -907,7 +911,7 @@ def update_Elo (winner, login1, login2) :
 	# current Elos
 	Elo1 = all_scores[login1][0]
 	Elo2 = all_scores[login2][0]
-	# print "Current Elos", Elo1, Elo2
+
 	# current number of matches played
 	m1 = all_scores[login1][1]
 	m2 = all_scores[login2][1]
@@ -920,7 +924,6 @@ def update_Elo (winner, login1, login2) :
 		k2 = 80.0 / (1+0.1*m2)
 	else :
 		k2 = 10
-	# print "K values", k1, k2
 
 	prob = 1 / (1 + 10**((Elo1-Elo2)/400.0))
 
@@ -1022,7 +1025,7 @@ print all_scores
 
 def handler(signum, frame) :
 
-    print 'Signal handler called with signal', signum
+    #print 'Signal handler called with signal', signum
 
     if signum == 14 :
     	raise RuntimeError("20 seconds have passed.")
@@ -1065,15 +1068,11 @@ def remove_disc() :
 
 
 
-setdefaulttimeout(40.0)
+setdefaulttimeout(40.0)    # default timeout for all communications between clients and servers
 s=socket(AF_INET,SOCK_STREAM)
 s.setsockopt(SOL_SOCKET, SO_REUSEADDR,1)
 s.bind(("127.0.0.1",4242))
-s.listen(8)
-#serversocket.bind((socket.gethostname(), 80))
-
-
-shutdown = False
+s.listen(16)
 
 guests_number = 0
 threads = []
@@ -1102,9 +1101,8 @@ The associated objects are deleted if so.
 
 try :
 
-	# could be replaced by 'while shutdown == False' or something similar to handle server shutdown (voluntary or not)
+	# could be replaced in the future by 'while shutdown == False' or something similar to handle server shutdown (voluntary or not)
 	while True :
-
 
 		account_infos = None
 
@@ -1172,6 +1170,7 @@ try :
 							newthread = Thread(target=main_serveur,args=(wp1,opponent))
 							threads.append(newthread)
 							newthread.start()
+							# print "Game started, currently ",len(threads)," threads have been created."
 
 
 			# if a new player wants to join
@@ -1243,6 +1242,7 @@ try :
 						newthread.daemon = True
 						threads.append(newthread)
 						newthread.start()
+						# print "Game started, currently ",len(threads)," threads have been created."
 
 					# if there isn't any player in queue whose level is close enough to the newcomer, the newcomer is added to the queue
 					else :
@@ -1271,6 +1271,8 @@ finally :
 
 	signal.setitimer(signal.ITIMER_REAL,0)
 
+	signal.alarm(500)
+
 
 	for player in online_players :
 
@@ -1284,7 +1286,7 @@ finally :
 	try :
 
 		for t in threads :
-			t.join(5)
+			t.join(60)
 
 	except RuntimeError as e :
 
@@ -1299,6 +1301,8 @@ finally :
 		player.sock.close()
 		# and the player object is deleted
 		del player
+
+	signal.alarm(0)
 
 	s.shutdown(SHUT_RDWR)
 	s.close()
