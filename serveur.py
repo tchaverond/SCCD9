@@ -1250,7 +1250,12 @@ finally :
 
 	for player in online_players :
 
-		player.sock.sendall("shutdown")
+		try :
+
+			player.sock.sendall("shutdown")
+
+		except :
+			pass
 	
 	try :
 
