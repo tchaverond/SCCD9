@@ -15,7 +15,7 @@ import tkDialog
 
 
 
-# defines the popup window used for asking login informations to a player (not included in minimalistic popup windows package 'tkMessageBox')
+# defines the popup window used to ask login informations of a player (not included in minimalistic popup windows package 'tkMessageBox')
 class LoginWindow(tkDialog.Dialog):
 
 	def body(self, master):
@@ -75,7 +75,7 @@ class Layout:
 
 
 		self.click = False 					# only used to exit play() method upon click
-		self.my_turn = False				# preventing the client from sending coordinates on click when waiting for the opponent
+		self.my_turn = False				# preventing the client from sending coordinates on click when waiting for the opponent to make a move
 		self.end_game = False				# used to exit run() when game has ended
 
 		self.player_ID = player_ID			# this player's ID (either "player1" or "player2", determined by the server)
@@ -141,11 +141,10 @@ class Layout:
 
 	def ping (self) :
 
-		print 'Pinging'
+		#print 'Pinging'
 		send_sthg(self.serv_socket,["ping"])
 
 		self.ticktock = 2
-		#print "finished",self.ticktock
 
 
 
@@ -160,6 +159,11 @@ class Layout:
 			self.label_player.configure(text="Now playing : Green")
 
 		self.click = False
+
+
+		# The following is just a trick to ping the server every 30 seconds (if the player doesn't do anything by that time) while still refreshing the window
+		# This is necessary because of the behaviour of Tkinter (especially the update() method) when timers and threads are involved
+		# (I couldn't make it work with 'signal' timers for instance)
 		self.ticktock = 1
 
 		while not self.click :
@@ -167,7 +171,6 @@ class Layout:
 			t = threading.Timer(30.0,self.ping)
 			t.daemon = True
 			t.start()
-			#print "started A",self.ticktock
 
 			while self.ticktock == 1 and not self.click :
 
@@ -176,10 +179,9 @@ class Layout:
 
 			self.ticktock = 1
 
-
 		t.cancel()
 
-		#print "Out of play()"
+
 		self.my_turn = False
 
 
@@ -316,16 +318,17 @@ class Layout:
 
 
 
-
+	# Method running as long as the game lasts
 	def run (self) :
 
 		try :
+
 			while not self.end_game :
 
 				#print "Waiting for an order."
-				message = recv_sthg(self.serv_socket)
-				self.handle(message)
-				self.fenetre.update_idletasks()
+				message = recv_sthg(self.serv_socket)     # receiving server order
+				self.handle(message)                      # handling the message
+				self.fenetre.update_idletasks()           # graphical updates
 				self.fenetre.update()
 
 		except IOError as e :
@@ -335,8 +338,11 @@ class Layout:
 			raise
 
 
+
+	# handling any received message
 	def handle (self, message) :
 
+		# translating received strings to their initial format (grid, queens, or coords)
 		if "grid" in message :
 
 			grid = unstring_grid(message[1+message.index("grid")])
@@ -349,15 +355,21 @@ class Layout:
 
 			coords = unstring_coords(message[1+message.index("coords")])
 
+		# evaluating the method told by the server
 		if message[0] == "method" :
 
 			eval(message[1+message.index("method")])
 
+		# if we received a ping from the server (telling it's not a disconnection)
 		elif "ping" in message :
 
-			print "ping'd"
-			#pass
-			# TODO (?)
+			#print "ping'd"
+			pass
+
+		# other cases should not happen, except if the message has been corrupted
+		else :
+
+			print "I have an issue in handling this message ! Trying to continue."
 
 			
 
@@ -422,13 +434,8 @@ def unstring_coords (coords) :
 	return rebuilt_coords
 
 
-def handler_com(signum, frame):
 
-    print 'Signal handler called with signal', signum
-    raise RuntimeError("Connection expired.")
-
-
-
+# sending a message with the built-in protocol
 def send_sthg(sock, msg):
 
 	final_msg = "$;"
@@ -457,16 +464,17 @@ def send_sthg(sock, msg):
 
 
 
+# receiving a message with the built-in protocol
 def recv_sthg(sock):
 
 
 	try :
 
 		msg = sock.recv(4096)
-		#print msg
 
 		mess=msg.split(";")
 
+		# if the server is planning to close soon
 		if "shutdown" in msg :
 
 			print "Server will be unavailable in a few minutes. If you're currently in a game, please end it as soon as possible."
@@ -483,9 +491,10 @@ def recv_sthg(sock):
 			sock.sendall('$ok$')
 			return mess
 
+		# this case happens if the server faces issues with sockets and wants to check who's still here
 		elif 'Check.' in msg :
 
-			raise RuntimeError("Game crashed at server.")
+			raise RuntimeError("Game crashed at server.")     # the game can't go on anyway, so we must end it if it's still running on this side
 
 		else :
 
@@ -683,15 +692,18 @@ mainwindow.title("Deluxe Checkers 9000 (Beta)")
 
 background_pic = PhotoImage(file="background.gif")
 
+# panedwindow contaning all widgets of the main window
 menu = PanedWindow(mainwindow, height=min(600,mainwindow.winfo_screenheight()*0.8), width=min(800,mainwindow.winfo_screenwidth()*0.8, 1.5*mainwindow.winfo_screenheight()*0.8))
 
+# background
 bg_label = Label(menu,image=background_pic)
 bg_label.image = background_pic
 bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
+# displayed while waiting for an opponent
 waiting_label = Label(menu,text="Looking for an opponent...",font="-weight bold -size 20",image=background_pic,compound=CENTER)
-#menu.add(waiting_label)
 
+# displayed at start
 play_button = Button(menu,text="Play !",command=lets_go,height=600,width=800,image=background_pic,compound=CENTER,font="-weight bold -size 20")
 menu.add(play_button)
 
