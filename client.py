@@ -70,8 +70,8 @@ class Layout:
 		self.fenetre.title("Deluxe Checkers 9000 (Beta)")
 		
 
-		self.h = self.fenetre.winfo_screenheight() * 0.5
-		self.w = min(self.fenetre.winfo_screenwidth() * 0.5, 1.5*self.h)
+		self.h = self.fenetre.winfo_screenheight() * 0.65
+		self.w = min(self.fenetre.winfo_screenwidth() * 0.65, 1.5*self.h)
 
 
 		self.click = False 					# only used to exit play() method upon click
@@ -94,6 +94,9 @@ class Layout:
 		self.x_gap = 0.1*self.cs 				# x gap between 2 squares
 		self.y_gap = 0.1*self.cs				# y gap between 2 squares
 		self.size = self.cs - self.x_gap 		# piece size
+		if self.player_ID == "player1" :
+			self.x_gap += 5 					# small corrections for player1
+			self.y_gap += 5
 
 		# parameters for the cemetery (place where we draw the pieces that have been taken)
 		self.cemetery_cs = 0.3*self.cs
