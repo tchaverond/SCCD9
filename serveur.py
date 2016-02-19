@@ -805,31 +805,33 @@ def main_serveur(player1, player2) :
 
 		except IOError as e:
 
-			#  e : player that has been disconnected
-			survivor=3-int(str(e))
-			send_sthg(partie.sockets[survivor],["method","self.win()"])
+			if len(str(e)) < 2 :
 
-			# asking the survivor if he wants to play again
-			send_sthg(partie.sockets[survivor],["play_again"])
-			again = recv_sthg(partie.sockets[survivor])
+				#  e : player that has been disconnected
+				survivor = 3-int(str(e))
+				send_sthg(partie.sockets[survivor],["method","self.win()"])
 
-			# if he doesn't, we remember it, in order to delete the corresponding object after
-			if int(again[0]) == 0 :
-				if survivor==1:
-					player1.ready = False      # defaults to True
-				else:
-					player2.ready = False
+				# asking the survivor if he wants to play again
+				send_sthg(partie.sockets[survivor],["play_again"])
+				again = recv_sthg(partie.sockets[survivor])
 
-			# if he wants to play again, we add him to the queue
-			else :
-				if survivor==1:
-					queue.append(player1)
-				else:
-					queue.append(player2)
+				# if he doesn't, we remember it, in order to delete the corresponding object after
+				if int(again[0]) == 0 :
+					if survivor==1:
+						player1.ready = False      # defaults to True
+					else:
+						player2.ready = False
 
-			update_scores(survivor,player1,player2)
+				# if he wants to play again, we add him to the queue
+				else :
+					if survivor==1:
+						queue.append(player1)
+					else:
+						queue.append(player2)
 
-			print "Game ended with a disconnection :'("
+				update_scores(survivor,player1,player2)
+
+				print "Game ended with a disconnection :'("
 
 
 
