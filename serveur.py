@@ -805,12 +805,8 @@ def main_serveur(player1, player2) :
 
 		except IOError as e:
 
-			print e
-
-			#if 'IOError' in type(e) :
-			
-			survivor=3-int(str(e)) #normalement e correspond au numéro de la socket qui a plante
-			print survivor
+			#  e : player that has been disconnected
+			survivor=3-int(str(e))
 			send_sthg(partie.sockets[survivor],["method","self.win()"])
 
 			# asking the survivor if he wants to play again
@@ -1020,7 +1016,7 @@ for i in temp :
 print all_scores
 
 
-# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-      Signal methods      -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
 
 def handler(signum, frame) :
 
@@ -1037,6 +1033,34 @@ def quit_handler(signal, frame):
 	raise KeyboardInterrupt("Out !")
 
 signal.signal(signal.SIGINT, quit_handler)
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-       Removing offline players       -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
+def remove_disc() :
+
+	# checking if there are disconnected players (or that don't want to play again)
+	for player in online_players :
+
+		# if so
+		if player.ready == False :
+
+			if player in queue :
+				queue.remove(player)
+
+			online_players.remove(player)
+			# the corresponding socket is closed
+			player.sock.shutdown(SHUT_WR)
+			player.sock.close()
+			# and the player object is deleted
+			del player
+
+
+# -__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__-__- #
+
 
 
 setdefaulttimeout(40.0)
@@ -1087,18 +1111,8 @@ try :
 
 			print "Waiting for someone."
 
-			# checking if there are disconnected players (that don't want to play again), it's here but it could be elsewhere, we just need it to check regularly
-			for player in online_players :
-
-				# if so
-				if player.ready == False :
-
-					online_players.remove(player)
-					# the corresponding socket is closed
-					player.sock.shutdown(SHUT_WR)
-					player.sock.close()
-					# and the player object is deleted
-					del player
+			# checking if there are disconnected players (or that don't want to play again)
+			remove_disc()
 
 
 			# looking for a new client (player)
@@ -1113,6 +1127,7 @@ try :
 			except RuntimeError as e :
 
 				print e
+				remove_disc()
 
 				# each player still in queue have been waiting 20 seconds more since last time, so we increase their timers
 				for wp in queue :
