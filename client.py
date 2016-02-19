@@ -78,7 +78,7 @@ class Layout:
 		self.my_turn = False				# preventing the client from sending coordinates on click when waiting for the opponent
 		self.end_game = False				# used to exit run() when game has ended
 
-		self.player_ID = player_ID			# this player's ID (either 1 or 2, determined by the server)
+		self.player_ID = player_ID			# this player's ID (either "player1" or "player2", determined by the server)
 
 		self.serv_socket = serv_socket		# server socket
 
@@ -111,11 +111,9 @@ class Layout:
 
 
 		# label indicating the player whose turn it is
-		self.player_now = StringVar()
-		self.player_now.set("Now playing : Green")
-		label_player = Label(controls,textvariable=self.player_now,height=4)
+		self.label_player = Label(controls,text="Now playing : Green",height=10)
 
-		controls.add(label_player)
+		controls.add(self.label_player)
 
 
 		# canvas to draw the pieces taken by opponent
@@ -150,6 +148,12 @@ class Layout:
 
 		#print "Your turn!"
 		self.my_turn = True
+
+		if self.player_ID == "player1" :
+			self.label_player.configure(text="Now playing : Red")
+		else :
+			self.label_player.configure(text="Now playing : Green")
+
 		self.click = False
 		self.ticktock = 1
 
@@ -256,6 +260,12 @@ class Layout:
 				self.cemetery.create_oval(self.cemetery_cs*(i-10)+self.x_gap,self.y_gap+3*self.cemetery_y_gap,self.cemetery_cs*(i-10)+self.x_gap+self.cemetery_size,self.y_gap+3*self.cemetery_y_gap+self.cemetery_size,outline='#080',fill='#080')
 
 
+		if self.player_ID == "player1" :
+			self.label_player.configure(text="Now playing : Green")
+		else :
+			self.label_player.configure(text="Now playing : Red")
+
+
 
 	def highlight_piece_1 (self, coords) :
 
@@ -294,10 +304,10 @@ class Layout:
 	def check_end (winner) :
 		
 		if winner =='player1':
-			self.player_now.set("The red guy has won !")
+			self.label_player.configure(text="The red guy has won !")
 
 		if winner =='player2':
-			self.player_now.set("The green guy has won !")
+			self.label_player.configure(text="The green guy has won !")
 
 
 
