@@ -622,15 +622,15 @@ class Board :
 
 				self.winner = 3-self.player	
 
-		except IOError as e :
-			print e
+		except IOError :
+
 			print "A client crashed."
 			#normalement e correspond a la socket qui a plante, on veut le numero du joueur associe
 			#normalement une socket transformee en str ne sert a rien mais on veut juste savoir a qui elle appartient
 			# !!! doesn't work !!!
-			player_out=1*(str(self.sockets[1])==e)+2*(str(self.sockets[2])==e)
-			print "It's the player", str(player_out)
-			raise IOError(str(player_out))
+			#player_out=1*(str(self.sockets[1])==e)+2*(str(self.sockets[2])==e)
+			print "It's the player", str(self.player)
+			raise IOError(str(self.player))
 
 
 
@@ -695,8 +695,9 @@ def send_sthg(sock, msg):
 
 	except timeout as e :
 
-		print e
-		raise IOError(str(sock))
+		# print partie.sockets.index(sock)
+		# raise IOError(str(partie.sockets.index(sock)))
+		raise IOError("hum")
 	
 
 
@@ -717,19 +718,20 @@ def recv_sthg(sock):
 
 		else:
 			print 'Caught an unconsistent message :', msg
-			sock.sendall('$errmsg$')
-			raise IOError(str(sock))
+			print "Trying to continue."
+			#sock.sendall('$errmsg$')
+			raise IOError
 
 	except error as e :
 
 		if e.errno==errno.ECONNRESET :
-			print (str(sock))
-			raise IOError(str(sock))
+			print "Client disconnected."
+			raise IOError
 
 	except timeout as e :
 
-		print e
-		raise IOError(str(sock))
+		print "Timeout."
+		raise IOError
 	
 
 
@@ -803,31 +805,36 @@ def main_serveur(player1, player2) :
 
 		except IOError as e:
 
-			if type(e) == str :
+			print e
+
+			#if 'IOError' in type(e) :
 			
-				survivor=3-int(e) #normalement e correspond au numéro de la socket qui a plante
-				update_scores(survivor,player1,player2)
-				send_sthg(self.sockets[survivor],["method","self.win()"])
+			survivor=3-int(str(e)) #normalement e correspond au numéro de la socket qui a plante
+			print survivor
+			send_sthg(partie.sockets[survivor],["method","self.win()"])
 
-				# asking the survivor if he wants to play again
-				send_sthg(self.sockets[survivor],["play_again"])
-				again = recv_sthg(self.sockets[survivor])
+			# asking the survivor if he wants to play again
+			send_sthg(partie.sockets[survivor],["play_again"])
+			again = recv_sthg(partie.sockets[survivor])
 
-				# if he doesn't, we remember it, in order to delete the corresponding object after
-				if int(again[0]) == 0 :
-					if survivor==1:
-						player1.ready = False      # defaults to True
-					else:
-						player2.ready = False
+			# if he doesn't, we remember it, in order to delete the corresponding object after
+			if int(again[0]) == 0 :
+				if survivor==1:
+					player1.ready = False      # defaults to True
+				else:
+					player2.ready = False
 
-				# if he wants to play again, we add him to the queue
-				else :
-					if survivor==1:
-						queue.append(player1)
-					else:
-						queue.append(player2)
+			# if he wants to play again, we add him to the queue
+			else :
+				if survivor==1:
+					queue.append(player1)
+				else:
+					queue.append(player2)
 
-				print "Game ended with a disconnection :'("
+			update_scores(survivor,player1,player2)
+
+			print "Game ended with a disconnection :'("
+
 
 
 
